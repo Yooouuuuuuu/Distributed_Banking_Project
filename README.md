@@ -1,1 +1,3 @@
-# Distributed-Banking-System-Based-on-Kafka
+Code to do banking payment on Kafka.
+
+
