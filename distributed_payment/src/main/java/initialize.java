@@ -14,7 +14,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.simple.SimpleLogger;
 import java.util.*;
 
-public class initialize_v3 {
+public class initialize {
     public static void main(String[] args) throws Exception {
 
         /*
@@ -26,27 +26,37 @@ public class initialize_v3 {
         args[5]: init balance of each bank
         args[6]: "max.poll.records"
         args[7]: block size
-        args[8]: timeout of aggregating transactions to a block for aggregator
-        args[9]: timeout of validator update accounts' UTXO
-        args[10]: maximum time for validator to update UTXO
-        args[11]: timeout of aggregating transactions as UTXO for sumUTXO
-        args[12]: # of data (transactions)
 
-        String bootstrapServers = "127.0.0.1:9092";
-        String schemaRegistryUrl = "http://127.0.0.1:8081";
-        int numOfPartitions = 3;
-        int numOfAccounts = 1000;
-        short numOfReplicationFactor = 1;
-        long initBalance = 1000000L;
-        int maxPoll = 500;
-        int blockSize = 500;
-        long blockTimeout = 10000; //aggregator only
-        long UTXOUpdatePeriod = 10000; //validator only
-        int UTXOUpdateBreakTime = 1000; //validator only
-        long aggUTXOTime = 10000; //sumUTXO only
-        long numOfData = 10000; //sourceProducer only
+        args[8]: timeout of aggregating transactions to a block for aggregator
+
+        args[9]: timeout of aggregating transactions as UTXO for sumUTXO
+
+        args[10]: # of data (transactions)
+        args[11]: amount per transaction
+
+        args[11]: timeout of validator update accounts' UTXO
+        args[12]: maximum time for validator to update UTXO
+        args[13]: randomly update UTXO or not
         */
 
+        //inputs
+        String bootstrapServers = args[0];
+        String schemaRegistryUrl = args[1];
+        int numOfPartitions = Integer.parseInt(args[2]);
+        int numOfAccounts = Integer.parseInt(args[3]);
+        short numOfReplicationFactor = Short.parseShort(args[4]);
+        long initBalance = Long.parseLong(args[5]);
+        int maxPoll = Integer.parseInt(args[6]);
+        int blockSize = Integer.parseInt(args[7]);
+        long blockTimeout = Long.parseLong(args[8]); //aggregator only
+        long aggUTXOTime = Long.parseLong(args[9]); //sumUTXO only
+        long numOfData = Long.parseLong(args[10]); //sourceProducer only
+        long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
+        long UTXOUpdatePeriod = Long.parseLong(args[12]); //validator only
+        int UTXOUpdateBreakTime = Integer.parseInt(args[13]); //validator only
+        boolean randomUpdate = Boolean.parseBoolean(args[14]); //validator only
+
+        /*
         String bootstrapServers = "127.0.0.1:9092";
         String schemaRegistryUrl = "http://127.0.0.1:8081";
         int numOfPartitions = 3;
@@ -56,10 +66,12 @@ public class initialize_v3 {
         int maxPoll = 500;
         int blockSize = 500;
         long blockTimeout = 10000; //aggregator only
-        long UTXOUpdatePeriod = 10000; //validator only
-        int UTXOUpdateBreakTime = 1000; //validator only
         long aggUTXOTime = 10000; //sumUTXO only
         long numOfData = 10000; //sourceProducer only
+        long UTXOUpdatePeriod = 10000; //validator only
+        int UTXOUpdateBreakTime = 1000; //validator only
+        boolean randomUpdate = true; //validator only
+        */
 
         //props
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off"); //"off", "trace", "debug", "info", "warn", "error".

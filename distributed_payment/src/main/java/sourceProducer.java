@@ -11,20 +11,38 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class sourceProducer_v3 {
+public class sourceProducer {
     static String outAccount;
     static String inAccount;
 
     public static void main(String[] args) {
 
         //inputs
+        String bootstrapServers = args[0];
+        String schemaRegistryUrl = args[1];
+        int numOfPartitions = Integer.parseInt(args[2]);
+        int numOfAccounts = Integer.parseInt(args[3]);
+        short numOfReplicationFactor = Short.parseShort(args[4]);
+        long initBalance = Long.parseLong(args[5]);
+        int maxPoll = Integer.parseInt(args[6]);
+        int blockSize = Integer.parseInt(args[7]);
+        long blockTimeout = Long.parseLong(args[8]); //aggregator only
+        long aggUTXOTime = Long.parseLong(args[9]); //sumUTXO only
+        long numOfData = Long.parseLong(args[10]); //sourceProducer only
+        long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
+        long UTXOUpdatePeriod = Long.parseLong(args[12]); //validator only
+        int UTXOUpdateBreakTime = Integer.parseInt(args[13]); //validator only
+        boolean randomUpdate = Boolean.parseBoolean(args[14]); //validator only
+
+        /*
         String bootstrapServers = "127.0.0.1:9092";
         String schemaRegistryUrl = "http://127.0.0.1:8081";
         int numOfPartitions = 3;
-        int numOfAccounts = 1000;
+        int numOfAccounts = 10;
         long initBalance = 1000000L;
-        long numOfData = 1000000;
-        long amount = 100L; //per transaction
+        long numOfData = 10000;
+        long amountPerTransaction = 100L; //per transaction
+        */
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "info"); //"off", "trace", "debug", "info", "warn", "error".
@@ -90,7 +108,7 @@ public class sourceProducer_v3 {
             Transaction detail = new Transaction(i,
                     bank.get(outBankNum), outAccount,
                     bank.get(inBankNum), inAccount,
-                    outBankNum, inBankNum, amount, 0);
+                    outBankNum, inBankNum, amountPerTransaction, 0);
             List<Transaction> listOfDetail = new ArrayList<Transaction>();
             listOfDetail.add(detail);
 
@@ -101,7 +119,7 @@ public class sourceProducer_v3 {
 
             //send
             producer.send(new ProducerRecord<String, Block>("transactions", outBankNum, bank.get(outBankNum), output));
-            if (bankBalance.get(outAccount) - amount >= 0) {
+            if (bankBalance.get(outAccount) - amountPerTransaction >= 0) {
                 bankBalance.compute(outAccount, (key, value) -> value - detail.getAmount());
                 bankBalance.compute(inAccount, (key, value) -> value + detail.getAmount());
             }

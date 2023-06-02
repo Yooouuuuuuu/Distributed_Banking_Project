@@ -23,7 +23,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class validator_v3 {
+public class validator {
     static KafkaConsumer<String, Block> consumerFromBlocks;
     static KafkaConsumer<String, Block> consumerFromAggUTXO;
     static KafkaConsumer<String, Block> consumerFromUTXOOffset;
@@ -56,18 +56,37 @@ public class validator_v3 {
  */
 
         //inputs
+        String bootstrapServers = args[0];
+        String schemaRegistryUrl = args[1];
+        int numOfPartitions = Integer.parseInt(args[2]);
+        int numOfAccounts = Integer.parseInt(args[3]);
+        short numOfReplicationFactor = Short.parseShort(args[4]);
+        long initBalance = Long.parseLong(args[5]);
+        int maxPoll = Integer.parseInt(args[6]);
+        int blockSize = Integer.parseInt(args[7]);
+        long blockTimeout = Long.parseLong(args[8]); //aggregator only
+        long aggUTXOTime = Long.parseLong(args[9]); //sumUTXO only
+        long numOfData = Long.parseLong(args[10]); //sourceProducer only
+        long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
+        long UTXOUpdatePeriod = Long.parseLong(args[12]); //validator only
+        int UTXOUpdateBreakTime = Integer.parseInt(args[13]); //validator only
+        boolean randomUpdate = Boolean.parseBoolean(args[14]); //validator only
+
+        /*
         String bootstrapServers = "127.0.0.1:9092";
         String schemaRegistryUrl = "http://127.0.0.1:8081";
         int numOfPartitions = 3;
         int maxPoll = 500;
-        long UTXOUpdatePeriod = 60000;
+        long UTXOUpdatePeriod = 10000;
         int UTXOUpdateBreakTime = 1000;
+        boolean randomUpdate = true;
+        */
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off");//"off", "trace", "debug", "info", "warn", "error"
         InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl);
         InitProducer(bootstrapServers, schemaRegistryUrl);
-        Logger logger = LoggerFactory.getLogger(validator_v3.class);
+        Logger logger = LoggerFactory.getLogger(validator.class);
         producer.initTransactions();
 
         for (int i = 0; i < numOfPartitions; i++) {
@@ -86,7 +105,7 @@ public class validator_v3 {
                     ProcessBlocks(record.value(), UTXOUpdatePeriod, UTXOUpdateBreakTime);
                     //Metadata for processing UpdateUTXO is ready, so set the flag to true.
                     start = true;
-                    //System.out.println(bankBalance);
+                    System.out.println(bankBalance);
                 } else if (record.value().getTransactions().get(0).getCategory() == 2) {
                     //Category 2 means it is an initialize record for accounts' balance. Only do once when system start.
                     InitBank(record.value(), record);
@@ -110,11 +129,15 @@ public class validator_v3 {
             }
             if (start) {
                 //Choose a partition to check if it needs to update or not.
-                //int updatePartition = (int) (countForUpdateUTXO % numOfPartitions);
-                int updatePartition = ThreadLocalRandom.current().nextInt(0, numOfPartitions);;
 
-                UpdateUTXO(UTXOUpdatePeriod, UTXOUpdateBreakTime, updatePartition, false);
-                countForUpdateUTXO += 1;
+                if (randomUpdate) {
+                    int updatePartition = ThreadLocalRandom.current().nextInt(0, numOfPartitions);
+                    UpdateUTXO(UTXOUpdatePeriod, UTXOUpdateBreakTime, updatePartition, false);
+                } else {
+                    int updatePartition = (int) (countForUpdateUTXO % numOfPartitions);
+                    countForUpdateUTXO += 1;
+                    UpdateUTXO(UTXOUpdatePeriod, UTXOUpdateBreakTime, updatePartition, false);
+                }
 
                 //Ideally, I want to check every partition every round. Since mostly we only need to check individual
                 //"last update time" rather than real update(poll) and the loading is not too big. However, consumer
@@ -122,7 +145,6 @@ public class validator_v3 {
                 //will always try to poll while consumer is unable to poll. For example, the for loop try partitions
                 // 0 to 2 (for (int updatePartition = 0; updatePartition < 3; updatePartition++)), and we find out that
                 //partition 1 and 2 are never update.
-
             }
         }
     }
@@ -328,7 +350,9 @@ public class validator_v3 {
     private static void UpdateUTXO(long updatePeriod, int updateBreakTime, int updatePartition, boolean inTransaction) {
         //reset flag
         boolean update = false;
-        int maxHeartbeat = 200; //ms, if heartbeat is greater than maxHeartbeat, means nothing waiting to be polled.
+
+        //setting heartbeat is also a choice?
+        //int maxHeartbeat = 200; //ms, if heartbeat is greater than maxHeartbeat, means nothing waiting to be polled.
 
         //check if the partition is taken charge by this consumer
         if (partitionBank.containsKey(updatePartition)) {
@@ -442,6 +466,7 @@ public class validator_v3 {
                             startTime.get(partitionBank.get(updatePartition)) > updateBreakTime) {
                         break;
                     }
+
                     //Though waiting for consumer to poll until last record may cost a lot of time,
                     //this is crucial to separate two ways of break between the "inTransaction" flag for serialization.
                     //For the property of serialization, we must make sure the accounts lack of money update

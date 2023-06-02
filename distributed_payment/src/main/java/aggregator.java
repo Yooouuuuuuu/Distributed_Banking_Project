@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 
-public class aggregator_v2 {
+public class aggregator {
 
     static KafkaConsumer<String, Block> consumerFromTransactions;
     static Producer<String, Block> producer;
@@ -28,6 +28,23 @@ public class aggregator_v2 {
     public static void main(String[] args) throws Exception {
 
         //inputs
+        String bootstrapServers = args[0];
+        String schemaRegistryUrl = args[1];
+        int numOfPartitions = Integer.parseInt(args[2]);
+        int numOfAccounts = Integer.parseInt(args[3]);
+        short numOfReplicationFactor = Short.parseShort(args[4]);
+        long initBalance = Long.parseLong(args[5]);
+        int maxPoll = Integer.parseInt(args[6]);
+        int blockSize = Integer.parseInt(args[7]);
+        long blockTimeout = Long.parseLong(args[8]); //aggregator only
+        long aggUTXOTime = Long.parseLong(args[9]); //sumUTXO only
+        long numOfData = Long.parseLong(args[10]); //sourceProducer only
+        long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
+        long UTXOUpdatePeriod = Long.parseLong(args[12]); //validator only
+        int UTXOUpdateBreakTime = Integer.parseInt(args[13]); //validator only
+        boolean randomUpdate = Boolean.parseBoolean(args[14]); //validator only
+
+/*
         String bootstrapServers = "127.0.0.1:9092";
         String schemaRegistryUrl = "http://127.0.0.1:8081";
         int numOfPartitions = 3;
@@ -35,11 +52,13 @@ public class aggregator_v2 {
         int blockSize = 500;
         long blockTimeout = 10000;
 
+ */
+
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off"); //"off", "trace", "debug", "info", "warn", "error".
         InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl, numOfPartitions);
         InitProducer(bootstrapServers, schemaRegistryUrl);
-        Logger logger = LoggerFactory.getLogger(aggregator_v2.class);
+        Logger logger = LoggerFactory.getLogger(aggregator.class);
         producer.initTransactions();
 
         //poll from "transactions" topic
