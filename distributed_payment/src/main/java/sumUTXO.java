@@ -45,7 +45,9 @@ public class sumUTXO {
         long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
         long UTXOUpdatePeriod = Long.parseLong(args[12]); //validator only
         int UTXOUpdateBreakTime = Integer.parseInt(args[13]); //validator only
-        boolean randomUpdate = Boolean.parseBoolean(args[14]); //validator only
+        boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
+        boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
+        boolean randomAmount = Boolean.parseBoolean(args[16]);
 
         /*
         String bootstrapServers = "127.0.0.1:9092";
@@ -66,7 +68,7 @@ public class sumUTXO {
         while (true) {
             ConsumerRecords<String, Block> records = consumerFromUTXO.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, Block> record : records) {
-                logger.info(record.value().toString());
+                //logger.info(record.value().toString());
                 //aggregate UTXO
                 sumTransactions(record.value());
                 //once any record comes, set the flag to false
@@ -127,7 +129,7 @@ public class sumUTXO {
                         partitionBank = new HashMap<>();
                         aggUTXO = new HashMap<String, Long>();
                         empty = true;
-                        System.out.println("Rebalanced.");
+                        System.out.println("sumUTXO is rebalanced.");
                     }});
 
         //consumer consume from "LocalBalance" topic
@@ -188,7 +190,7 @@ public class sumUTXO {
             }
 
             Block output = Block.newBuilder().setTransactions(listOfUTXO).build();
-            System.out.println(output);
+            //System.out.println(output);
 
             //producer send
             if (output.getTransactions().get(0).getAmount() != 0) {

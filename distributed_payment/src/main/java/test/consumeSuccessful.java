@@ -7,78 +7,140 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
+
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Properties;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class consumeSuccessful {
-    public static void main(String[] args) throws InterruptedException {
+    static KafkaConsumer<String, Block> consumerFromSuccessful;
+
+    public static void main(String[] args) throws InterruptedException, IOException {
 
         //inputs
+        String bootstrapServers = args[0];
+        String schemaRegistryUrl = args[1];
+        int numOfPartitions = Integer.parseInt(args[2]);
+        int numOfAccount = Integer.parseInt(args[3]);
+        boolean successfulMultiplePartition = Boolean.parseBoolean(args[4]);
+        /*
         String bootstrapServers = "127.0.0.1:9092";
         String schemaRegistryUrl = "http://127.0.0.1:8081";
         int numOfPartitions = 3;
         int numOfAccount = 1000;
+
+         */
+
         long firstRecordTime = 0;
         long lastRecordTime = 0;
 
-        Properties propsConsumerAssign = new Properties();
-        propsConsumerAssign.put("bootstrap.servers", bootstrapServers);
-        propsConsumerAssign.put("isolation.level", "read_committed");
-        propsConsumerAssign.put("enable.auto.commit", "false");
-        propsConsumerAssign.setProperty("key.deserializer", StringDeserializer.class.getName());
-        propsConsumerAssign.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
-        propsConsumerAssign.setProperty("schema.registry.url", schemaRegistryUrl);
-        propsConsumerAssign.setProperty("specific.avro.reader", "true");
 
-        KafkaConsumer<String, Block> consumerFromSuc =
-                new KafkaConsumer<>(propsConsumerAssign);
+        if (!successfulMultiplePartition) {
+            Properties propsConsumerAssign = new Properties();
+            propsConsumerAssign.put("bootstrap.servers", bootstrapServers);
+            propsConsumerAssign.put("isolation.level", "read_committed");
+            propsConsumerAssign.put("enable.auto.commit", "false");
+            propsConsumerAssign.setProperty("key.deserializer", StringDeserializer.class.getName());
+            propsConsumerAssign.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
+            propsConsumerAssign.setProperty("schema.registry.url", schemaRegistryUrl);
+            propsConsumerAssign.setProperty("specific.avro.reader", "true");
 
-        //consumer assign to specific topicPartition
-        TopicPartition topicPartition =
-                new TopicPartition("successful", 0);
-        consumerFromSuc.assign(Arrays.asList(topicPartition));
+            KafkaConsumer<String, Block> consumerFromSuc =
+                    new KafkaConsumer<>(propsConsumerAssign);
 
-        //find the latest offset, since that is all we need
-        consumerFromSuc.seekToEnd(Collections.singleton(topicPartition));
-        long latestOffset = consumerFromSuc.position(topicPartition);
+            //consumer assign to specific topicPartition
+            TopicPartition topicPartition =
+                    new TopicPartition("successful", 0);
+            consumerFromSuc.assign(Arrays.asList(topicPartition));
 
-        //poll data of specific topic partition from beginning to end
-        consumerFromSuc.seek(topicPartition, 0);
+            //find the latest offset, since that is all we need
+            consumerFromSuc.seekToEnd(Collections.singleton(topicPartition));
+            long latestOffset = consumerFromSuc.position(topicPartition);
 
-        //init record also goes into successful topic, thus start at numOfPartitions*numOfAccount
-        long count = -(numOfPartitions*numOfAccount);
-        System.out.println(count);
+            //poll data of specific topic partition from beginning to end
+            consumerFromSuc.seek(topicPartition, 0);
 
-        long timeout = System.currentTimeMillis();
-        
-        outerLoop:
-        while (true) {
-            ConsumerRecords<String, Block> records = consumerFromSuc.poll(Duration.ofMillis(100));
-            for (ConsumerRecord<String, Block> record : records) {
-                for (int i = 0; i < record.value().getTransactions().size(); i++) {
-                    if (record.value().getTransactions().get(i).getSerialNumber() == 1) {
-                        firstRecordTime = record.timestamp();
-                    } else {
-                        lastRecordTime = record.timestamp();
+            //init record also goes into successful topic, thus start at numOfPartitions*numOfAccount
+            long count = -(numOfPartitions * numOfAccount);
+            System.out.println(count);
+
+            long timeout = System.currentTimeMillis();
+
+            outerLoop:
+            while (true) {
+                ConsumerRecords<String, Block> records = consumerFromSuc.poll(Duration.ofMillis(100));
+                for (ConsumerRecord<String, Block> record : records) {
+                    for (int i = 0; i < record.value().getTransactions().size(); i++) {
+                        if (record.value().getTransactions().get(i).getSerialNumber() == 1) {
+                            firstRecordTime = record.timestamp();
+                        } else {
+                            lastRecordTime = record.timestamp();
+                        }
+                        System.out.println(record.value().getTransactions().get(i));
+                        count += 1;
+                        timeout = System.currentTimeMillis();
                     }
-                    System.out.println(record.value().getTransactions().get(i));
-                    count += 1;
-                    timeout = System.currentTimeMillis();
+                    if (record.offset() == latestOffset - 2) {
+                        break outerLoop;
+                    }
                 }
-                if (record.offset() == latestOffset-2) {
-                    break outerLoop;
+                if (System.currentTimeMillis() - timeout > 10000) {
+                    break;
                 }
             }
-            if (System.currentTimeMillis() - timeout > 10000) {
-                System.out.println("Nothing in the topic.");
-                break;
+            System.out.println("successful records counts: " + count);
+            System.out.println("For successful topic:\nfirst record end at: " + firstRecordTime + "\nlast record end at: " + lastRecordTime);
+            System.in.read();
+        } else {
+            //consumer consume from "transactions" topic
+            Properties propsConsumer = new Properties();
+            propsConsumer.put("bootstrap.servers", bootstrapServers);
+            propsConsumer.put("group.id", "test-group" + ThreadLocalRandom.current().nextInt(0, 1000));
+            propsConsumer.put("auto.offset.reset", "earliest");
+            propsConsumer.put("enable.auto.commit", "false");
+            propsConsumer.put("isolation.level", "read_committed");
+            //avro part
+            propsConsumer.setProperty("key.deserializer", StringDeserializer.class.getName());
+            propsConsumer.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
+            propsConsumer.setProperty("schema.registry.url", schemaRegistryUrl);
+            propsConsumer.setProperty("specific.avro.reader", "true");
+
+            String input_topic = "transactions";
+            consumerFromSuccessful =
+                    new KafkaConsumer<String, Block>(propsConsumer);
+            consumerFromSuccessful.subscribe(Collections.singleton(input_topic));
+
+            //init record also goes into successful topic, thus start at numOfPartitions*numOfAccount
+            long count = -(numOfPartitions * numOfAccount);
+            System.out.println(count);
+
+            long timeout = System.currentTimeMillis();
+
+            while (true) {
+                ConsumerRecords<String, Block> records = consumerFromSuccessful.poll(Duration.ofMillis(100));
+                for (ConsumerRecord<String, Block> record : records) {
+                    for (int i = 0; i < record.value().getTransactions().size(); i++) {
+                        if (record.value().getTransactions().get(i).getSerialNumber() == 1) {
+                            firstRecordTime = record.timestamp();
+                        } else {
+                            lastRecordTime = record.timestamp();
+                        }
+                        System.out.println(record.value().getTransactions().get(i));
+                        count += 1;
+                        timeout = System.currentTimeMillis();
+                    }
+                }
+                if (System.currentTimeMillis() - timeout > 10000) {
+                    break;
+                }
             }
+            System.out.println("successful records counts: " + count);
+            System.out.println("For successful topic:\nfirst record end at: " + firstRecordTime + "\nlast record end at: " + lastRecordTime);
+            System.in.read();
         }
-        System.out.println(count);
-        System.out.println("first record end at: " + firstRecordTime + "\nlast record end at: " + lastRecordTime);
     }
 }
 

@@ -42,7 +42,9 @@ public class aggregator {
         long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
         long UTXOUpdatePeriod = Long.parseLong(args[12]); //validator only
         int UTXOUpdateBreakTime = Integer.parseInt(args[13]); //validator only
-        boolean randomUpdate = Boolean.parseBoolean(args[14]); //validator only
+        boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
+        boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
+        boolean randomAmount = Boolean.parseBoolean(args[16]);
 
 /*
         String bootstrapServers = "127.0.0.1:9092";
@@ -65,7 +67,7 @@ public class aggregator {
         while (true) {
             ConsumerRecords<String, Block> records = consumerFromTransactions.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, Block> record : records) {
-                logger.info(record.value().toString());
+                //logger.info(record.value().toString());
                 //aggregate transactions to blocks using list in Avro
                 aggToBlock(record.value(), record);
                 //System.out.println(listOfCounts);
@@ -121,7 +123,7 @@ public class aggregator {
                             listOfListOfTransactions.add(listOfTransactions);
                             listOfCounts.add(0);
                         }
-                        System.out.println("Rebalanced. Initialize lists of blocks and counts.");
+                        System.out.println("aggregator is rebalanced. Initialize lists of blocks and counts.");
                     }});
     }
 
@@ -173,10 +175,6 @@ public class aggregator {
         consumerFromTransactions.commitSync((Collections.singletonMap(
                 new TopicPartition(record.topic(), record.partition()),
                 new OffsetAndMetadata(record.offset() + 1, ""))));
-
-        //print info
-        System.out.println("--------------------------------------------" + "partition " + record.partition()
-                + "send a block" + "--------------------------------------------");
     }
 
     public static void checkBlockTimeout(int numOfPartitions, long blockTimeout, String topic) {
@@ -209,10 +207,7 @@ public class aggregator {
                                 new OffsetAndMetadata(partitionOffset.get(partition) + 1, ""))));
 
                         //print info
-                        System.out.println("-----------------------------------------" +
-                                "partition " + partition + " send a block since timeout" +
-                                "-----------------------------------------\n" +
-                                listOfCounts);
+                        System.out.println("partition " + partition + " send a block since timeout\n" + listOfCounts);
 
                         //commit transactional write
                         producer.commitTransaction();

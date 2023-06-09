@@ -16,22 +16,22 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.simple.SimpleLogger;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadLocalRandom;
 
-public class validator {
+public class validator2 {
     static KafkaConsumer<String, Block> consumerFromBlocks;
-    static KafkaConsumer<String, Block> consumerFromAggUTXO;
+    static KafkaConsumer<String, Block> consumerFromUTXO;
     static KafkaConsumer<String, Block> consumerFromUTXOOffset;
     static KafkaConsumer<String, LocalBalance> consumerFromLocalBalance;
     static KafkaProducer producer;
     static HashMap<String, Long> bankBalance = new HashMap<String, Long>();
     static HashMap<Integer, String> partitionBank = new HashMap<Integer, String>();
-    static HashMap<Integer, Long> lastOffsetOfAggUTXO = new HashMap<>();
+    static HashMap<Integer, Long> lastOffsetOfUTXO = new HashMap<>();
     static HashMap<String, Long> startTime = new HashMap<String, Long>();
     static boolean start = false;
     static long countForUpdateUTXO = 0;
@@ -88,7 +88,7 @@ public class validator {
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off");//"off", "trace", "debug", "info", "warn", "error"
         InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl);
         InitProducer(bootstrapServers, schemaRegistryUrl);
-        Logger logger = LoggerFactory.getLogger(validator.class);
+        Logger logger = LoggerFactory.getLogger(validator2.class);
         producer.initTransactions();
 
         for (int i = 0; i < numOfPartitions; i++) {
@@ -124,7 +124,7 @@ public class validator {
                     bankBalance = new HashMap<String, Long>();
                     partitionBank = new HashMap<>();
                     startTime = new HashMap<>();
-                    lastOffsetOfAggUTXO = new HashMap<>();
+                    lastOffsetOfUTXO = new HashMap<>();
                     start = false;
                     System.out.println("Tx aborted. Reset hashmaps.");
                 }
@@ -188,7 +188,7 @@ public class validator {
                         bankBalance = new HashMap<String, Long>();
                         partitionBank = new HashMap<>();
                         startTime = new HashMap<>();
-                        lastOffsetOfAggUTXO = new HashMap<>();
+                        lastOffsetOfUTXO = new HashMap<>();
                         start = false;
                         System.out.println("validator is rebalanced. Reset hashmaps.");
                     }});
@@ -203,7 +203,7 @@ public class validator {
         propsConsumerAssign.setProperty("schema.registry.url", schemaRegistryUrl);
         propsConsumerAssign.setProperty("specific.avro.reader", "true");
         //consumer consume from "aggUTXO" topic
-        consumerFromAggUTXO =
+        consumerFromUTXO =
                 new KafkaConsumer<String, Block>(propsConsumerAssign);
         // We want to poll the partitions (banks) if and only if they are relevant to this validator,
         // however it is impossible if using "subscribe".
@@ -242,7 +242,7 @@ public class validator {
             bankBalance.put(recordValue.getTransactions().get(i).getOutAccount(),
                     recordValue.getTransactions().get(i).getAmount());
 
-            lastOffsetOfAggUTXO = new HashMap<>();
+            lastOffsetOfUTXO = new HashMap<>();
             start = false;
             // Since we want to save every change of state of local balance,
             // writing initialized data to "localBalance" topic is obvious,
@@ -305,6 +305,20 @@ public class validator {
                         recordValue.getTransactions().get(i).getOutAccount(),
                         newBalance));
 
+                //send UTXO every after transaction (if UTXODoNotAgg = true)
+                //build block
+                Transaction UTXOdetail = recordValue.getTransactions().get(i);
+                List<Transaction> listOfUTXODetail = new ArrayList<Transaction>();
+                listOfUTXODetail.add(UTXOdetail);
+                Block UTXOBlock = Block.newBuilder()
+                        .setTransactions(listOfUTXODetail)
+                        .build();
+                //send
+                producer.send(new ProducerRecord<String, Block>("UTXO",
+                        UTXOBlock.getTransactions().get(0).getInbankPartition(),
+                        UTXOBlock.getTransactions().get(0).getInbank(),
+                        UTXOBlock));
+
             } else {
                 //Else check the UTXO first. If still not enough, we reject the transaction.
                 UpdateUTXO(updatePeriod, updateBreakTime,
@@ -323,6 +337,20 @@ public class validator {
                             recordValue.getTransactions().get(0).getOutbankPartition(),
                             recordValue.getTransactions().get(i).getOutAccount(),
                             newBalance));
+
+                    //send UTXO every after transaction (if UTXODoNotAgg = true)
+                    //build block
+                    Transaction UTXOdetail = recordValue.getTransactions().get(i);
+                    List<Transaction> listOfUTXODetail = new ArrayList<Transaction>();
+                    listOfUTXODetail.add(UTXOdetail);
+                    Block UTXOBlock = Block.newBuilder()
+                            .setTransactions(listOfUTXODetail)
+                            .build();
+                    //send
+                    producer.send(new ProducerRecord<String, Block>("UTXO",
+                            UTXOBlock.getTransactions().get(0).getInbankPartition(),
+                            UTXOBlock.getTransactions().get(0).getInbank(),
+                            UTXOBlock));
                 } else {
                     // If balance is still not enough, reject the TX.
                     rejected = true;
@@ -356,12 +384,6 @@ public class validator {
                     currentBlock.getTransactions().get(0).getOutbankPartition(),
                     currentBlock.getTransactions().get(0).getOutbank(),currentBlock));
         }
-        //5. successful block send to "UTXO" topic since for the system, transactions are not complete.
-        //do not assign to specific to partition nor set key for two reason:
-        // (1) single partition for serialization
-        // (2) multiple partitions for kafka to do round-robin
-        producer.send(new ProducerRecord<String, Block>("UTXO", currentBlock));
-        //6. local balance is updated after every transaction is confirmed.
     }
 
     private static void UpdateUTXO(long updatePeriod, int updateBreakTime, int updatePartition, boolean inTransaction) throws InterruptedException {
@@ -382,16 +404,16 @@ public class validator {
             }
 
             //poll last read offset if reset
-            if (!lastOffsetOfAggUTXO.containsKey(updatePartition)) {
+            if (!lastOffsetOfUTXO.containsKey(updatePartition)) {
                 //If lastOffsetOfAggUTXO is init, set to -1:
                 //1. If latestOffset of consumerFromUTXOOffset is larger than 0, means this is not the first
                 //consumer process for bank(i) or being rebalanced. Use the value gain from "UTXOOffset" topic.
                 //2. However, if "UTXOOffset" topic is empty or only contains some unreadable records,
                 //we will start "aggUTXO" at "offset = lastOffsetOfAggUTXO + 1 = 0", thus set to -1.
-                lastOffsetOfAggUTXO.put(updatePartition, -1L);
+                lastOffsetOfUTXO.put(updatePartition, -1L);
 
                 TopicPartition topicPartition =
-                        new TopicPartition("aggUTXOOffset", updatePartition);
+                        new TopicPartition("UTXO", updatePartition);
                 consumerFromUTXOOffset.assign(Collections.singletonList(topicPartition));
                 consumerFromUTXOOffset.seekToEnd(Collections.singleton(topicPartition));
                 long latestOffset = consumerFromUTXOOffset.position(topicPartition);
@@ -403,7 +425,7 @@ public class validator {
                         ConsumerRecords<String, Block> offsetRecords =
                                 consumerFromUTXOOffset.poll(Duration.ofMillis(100));
                         for (ConsumerRecord<String, Block> offsetRecord : offsetRecords) {
-                            lastOffsetOfAggUTXO.put(updatePartition,
+                            lastOffsetOfUTXO.put(updatePartition,
                                     offsetRecord.value().getTransactions().get(0).getAmount());
                             //break once poll anything
                             break outerLoop;
@@ -414,23 +436,23 @@ public class validator {
                             break;
                         }
                     }
-                    System.out.println("Poll from aggUTXOOffset: " + lastOffsetOfAggUTXO + " (partition:offset)");
+                    System.out.println("Poll from aggUTXOOffset: " + lastOffsetOfUTXO + " (partition:offset)");
                 }
             }
 
-            //consumer assign to partition of "aggUTXO"
+            //consumer assign to partition of "UTXO"
             TopicPartition topicPartition =
-                    new TopicPartition("aggUTXO", updatePartition);
-            consumerFromAggUTXO.assign(Collections.singletonList(topicPartition));
+                    new TopicPartition("UTXO", updatePartition);
+            consumerFromUTXO.assign(Collections.singletonList(topicPartition));
 
             //find the latest offset, so we know when to break the while loop
             long latestOffset = 0;
-            consumerFromAggUTXO.seekToEnd(Collections.singleton(topicPartition));
-            latestOffset = consumerFromAggUTXO.position(topicPartition);
+            consumerFromUTXO.seekToEnd(Collections.singleton(topicPartition));
+            latestOffset = consumerFromUTXO.position(topicPartition);
 
 
             //Check if poll in needed. If not checked, we will lose poll duration time (timeout of poll)
-            if (latestOffset >= lastOffsetOfAggUTXO.get(updatePartition)) {
+            if (latestOffset >= lastOffsetOfUTXO.get(updatePartition)) {
 
                 //start transactional write (need to be outside the while loop)
                 if (!inTransaction) {
@@ -438,13 +460,13 @@ public class validator {
                 }
 
                 //seek the last read offset
-                consumerFromAggUTXO.seek(topicPartition, lastOffsetOfAggUTXO.get(updatePartition) + 1);
+                consumerFromUTXO.seek(topicPartition, lastOffsetOfUTXO.get(updatePartition) + 1);
 
                 outerLoop:
                 while (true) {
                     //We will assign multiple partition in a very short time and timeout followed by the
                     // poll duration. So the poll duration must be bigger than normal.
-                    ConsumerRecords<String, Block> UTXORecords = consumerFromAggUTXO.poll(Duration.ofMillis(60000));
+                    ConsumerRecords<String, Block> UTXORecords = consumerFromUTXO.poll(Duration.ofMillis(60000));
                     for (ConsumerRecord<String, Block> UTXORecord : UTXORecords) {
                         //reset heartbeat since continuous polling
                         for (int j = 0; j < UTXORecord.value().getTransactions().size(); j++) {
@@ -462,12 +484,12 @@ public class validator {
                         }
 
                         //build block of offset
-                        lastOffsetOfAggUTXO.put(updatePartition, UTXORecord.offset());
+                        lastOffsetOfUTXO.put(updatePartition, UTXORecord.offset());
                         String bank = partitionBank.get(updatePartition);
                         Transaction detail = new Transaction(-1L,
                                 bank, bank, bank, bank,
                                 updatePartition, updatePartition,
-                                lastOffsetOfAggUTXO.get(updatePartition), 3);
+                                lastOffsetOfUTXO.get(updatePartition), 3);
                         List<Transaction> listOfDetail = new ArrayList<Transaction>();
                         listOfDetail.add(detail);
                         Block offsetBlock = Block.newBuilder()

@@ -54,7 +54,10 @@ public class initialize {
         long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
         long UTXOUpdatePeriod = Long.parseLong(args[12]); //validator only
         int UTXOUpdateBreakTime = Integer.parseInt(args[13]); //validator only
-        boolean randomUpdate = Boolean.parseBoolean(args[14]); //validator only
+        boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
+        boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
+        boolean randomAmount = Boolean.parseBoolean(args[16]);
+
 
         /*
         String bootstrapServers = "127.0.0.1:9092";
@@ -98,13 +101,29 @@ public class initialize {
         topic_02.configs(configs); //spacial configs for specific topic
 
         String topic_name3 = "successful";
-        NewTopic topic_03 = new NewTopic(topic_name3, 1, numOfReplicationFactor); //for serialization
+        NewTopic topic_03;
         String topic_name4 = "rejected";
-        NewTopic topic_04 = new NewTopic(topic_name4, 1, numOfReplicationFactor);
+        NewTopic topic_04;
+        String topic_name6 = "UTXO";
+        NewTopic topic_06;
+
+        if (successfulMultiplePartition) {
+            topic_03 = new NewTopic(topic_name3, numOfPartitions, numOfReplicationFactor);
+            topic_04 = new NewTopic(topic_name4, numOfPartitions, numOfReplicationFactor);
+        } else {
+            topic_03 = new NewTopic(topic_name3, 1, numOfReplicationFactor); //for serialization
+            topic_04 = new NewTopic(topic_name4, 1, numOfReplicationFactor);
+        }
+
         String topic_name5 = "transactions";
         NewTopic topic_05 = new NewTopic(topic_name5, numOfPartitions, numOfReplicationFactor);
-        String topic_name6 = "UTXO";
-        NewTopic topic_06 = new NewTopic(topic_name6, 1, numOfReplicationFactor); //optional on partition
+
+        if (UTXODoNotAgg) {
+            topic_06 = new NewTopic(topic_name6, numOfPartitions, numOfReplicationFactor); //optional on partition
+        } else {
+            topic_06 = new NewTopic(topic_name6, 1, numOfReplicationFactor); //optional on partition
+        }
+
         String topic_name7 = "aggUTXO";
         NewTopic topic_07 = new NewTopic(topic_name7, numOfPartitions, numOfReplicationFactor);
         String topic_name8 = "aggUTXOOffset";

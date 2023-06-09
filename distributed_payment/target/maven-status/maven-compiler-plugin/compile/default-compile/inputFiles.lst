@@ -9,6 +9,7 @@
 /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/target/generated-sources/avro/my/avroSchema/AccountInfo.java
 /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/target/generated-sources/avro/my/avroSchema/Account.java
 /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/src/main/java/sumUTXO.java
+/home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/src/main/java/test/consumeAggUTXO.java
 /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/src/main/java/test/consumeTransactions.java
 /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/src/main/java/aggregator.java
 /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/src/main/java/sourceProducer.java

@@ -5,6 +5,8 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.simple.SimpleLogger;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +17,7 @@ public class sourceProducer {
     static String outAccount;
     static String inAccount;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
         //inputs
         String bootstrapServers = args[0];
@@ -32,7 +34,9 @@ public class sourceProducer {
         long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
         long UTXOUpdatePeriod = Long.parseLong(args[12]); //validator only
         int UTXOUpdateBreakTime = Integer.parseInt(args[13]); //validator only
-        boolean randomUpdate = Boolean.parseBoolean(args[14]); //validator only
+        boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
+        boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
+        boolean randomAmount = Boolean.parseBoolean(args[16]);
 
         /*
         String bootstrapServers = "127.0.0.1:9092";
@@ -45,7 +49,8 @@ public class sourceProducer {
         */
 
         //setups
-        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "info"); //"off", "trace", "debug", "info", "warn", "error".
+        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off"); //"off", "trace", "debug", "info", "warn", "error".
+
         //create banks (100, 101, 102 etc) & accounts
         ArrayList<String> bank = new ArrayList<String>();
         HashMap<String, Long> bankBalance = new HashMap<String, Long>();
@@ -104,6 +109,10 @@ public class sourceProducer {
                 inAccount = bank.get(inBankNum) + inAccountNum;
             }
 
+            if (randomAmount) {
+                amountPerTransaction = ThreadLocalRandom.current().nextInt(1, 1000);
+            }
+
             //build block
             Transaction detail = new Transaction(i,
                     bank.get(outBankNum), outAccount,
@@ -115,7 +124,7 @@ public class sourceProducer {
             Block output = Block.newBuilder()
                     .setTransactions(listOfDetail)
                     .build();
-            System.out.println(output);
+            //System.out.println(output);
 
             //send
             producer.send(new ProducerRecord<String, Block>("transactions", outBankNum, bank.get(outBankNum), output));
@@ -132,5 +141,7 @@ public class sourceProducer {
         //This bankBalance is for reference only,
         //if any transaction has been rejected, here shows the linearization result,
         //however our system is serialization only.
+
+        System.in.read();
     }
 }

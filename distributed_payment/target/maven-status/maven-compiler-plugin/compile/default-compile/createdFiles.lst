@@ -4,6 +4,7 @@ my/avroSchema/Block.class
 my/avroSchema/LocalBalance$Builder.class
 aggregator.class
 my/avroSchema/Transaction$1.class
+test/consumeAggUTXO.class
 validator.class
 initialize.class
 my/avroSchema/AccountInfo$Builder.class
