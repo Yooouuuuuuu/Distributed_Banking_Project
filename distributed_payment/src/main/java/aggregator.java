@@ -45,6 +45,9 @@ public class aggregator {
         boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
         boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
         boolean randomAmount = Boolean.parseBoolean(args[16]);
+        String log = args[17];
+        String transactionalId = args[18];
+
 
 /*
         String bootstrapServers = "127.0.0.1:9092";
@@ -57,9 +60,9 @@ public class aggregator {
  */
 
         //setups
-        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off"); //"off", "trace", "debug", "info", "warn", "error".
+        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log); //"off", "trace", "debug", "info", "warn", "error".
         InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl, numOfPartitions);
-        InitProducer(bootstrapServers, schemaRegistryUrl);
+        InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId);
         Logger logger = LoggerFactory.getLogger(aggregator.class);
         producer.initTransactions();
 
@@ -127,10 +130,10 @@ public class aggregator {
                     }});
     }
 
-    private static void InitProducer(String bootstrapServers, String schemaRegistryUrl) {
+    private static void InitProducer(String bootstrapServers, String schemaRegistryUrl, String transactionalId) {
         Properties propsProducer = new Properties();
         propsProducer.put("bootstrap.servers", bootstrapServers);
-        propsProducer.put("transactional.id", randomString());
+        propsProducer.put("transactional.id", transactionalId);
         propsProducer.put("enable.idempotence", "true");
         propsProducer.put("max.block.ms", "1000");
         //avro part

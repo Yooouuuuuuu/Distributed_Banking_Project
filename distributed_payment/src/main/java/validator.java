@@ -73,6 +73,8 @@ public class validator {
         boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
         boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
         boolean randomAmount = Boolean.parseBoolean(args[16]);
+        String log = args[17];
+        String transactionalId = args[18];
 
         /*
         String bootstrapServers = "127.0.0.1:9092";
@@ -85,9 +87,9 @@ public class validator {
         */
 
         //setups
-        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off");//"off", "trace", "debug", "info", "warn", "error"
+        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log);//"off", "trace", "debug", "info", "warn", "error"
         InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl);
-        InitProducer(bootstrapServers, schemaRegistryUrl);
+        InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId);
         Logger logger = LoggerFactory.getLogger(validator.class);
         producer.initTransactions();
 
@@ -220,10 +222,10 @@ public class validator {
                 new KafkaConsumer<String, LocalBalance>(propsConsumerAssign);
     }
 
-    private static void InitProducer(String bootstrapServers, String schemaRegistryUrl) {
+    private static void InitProducer(String bootstrapServers, String schemaRegistryUrl, String transactionalId) {
         Properties propsProducer = new Properties();
         propsProducer.put("bootstrap.servers", bootstrapServers);
-        propsProducer.put("transactional.id", randomString());
+        propsProducer.put("transactional.id", transactionalId);
         propsProducer.put("transaction.timeout.ms", 300000);
         propsProducer.put("enable.idempotence", "true");
         propsProducer.put("max.block.ms", "1000");
@@ -297,7 +299,8 @@ public class validator {
                 bankBalance.compute(recordValue.getTransactions().get(i).getOutAccount(), (key, value)
                         -> value - withdraw);
 
-                // update "localBalance" topic
+                // update "localBalance" topic. we write every account separately, thus do it in the loop. it should not
+                // affect the performance hardly.
                 LocalBalance newBalance =
                         new LocalBalance(bankBalance.get(recordValue.getTransactions().get(i).getOutAccount()));
                 producer.send(new ProducerRecord<String, LocalBalance>("localBalance",
@@ -332,6 +335,7 @@ public class validator {
                     rejectedCount += 1;
                     System.out.printf("Transaction No.%d cancelled.%n " + rejectedCount + " rejected.\n"
                             , recordValue.getTransactions().get(i).getSerialNumber());
+                    System.out.println(bankBalance);
                 }
             }
         }
@@ -454,7 +458,8 @@ public class validator {
                                     (key, value) -> value + amount);
                             // update "localBalance" topic
                             LocalBalance newBalance =
-                                    new LocalBalance(bankBalance.get(UTXORecord.value().getTransactions().get(j).getOutAccount()));
+                                    new LocalBalance(bankBalance.get(
+                                            UTXORecord.value().getTransactions().get(j).getOutAccount()));
                             producer.send(new ProducerRecord<>("localBalance",
                                     UTXORecord.value().getTransactions().get(j).getOutbankPartition(),
                                     UTXORecord.value().getTransactions().get(j).getOutAccount(),
@@ -503,13 +508,16 @@ public class validator {
                     //"every UTXO the transaction" before reject the transaction, thus we use seekToEnd find the latest
                     //offset. On the other hand, without the "inTransaction" flag, means it's just a regular update.
                 }
+
+                //if updated, print banks' balance
+                if (update) {
+                    System.out.println("UTXO updated: " + partitionBank.get(updatePartition) + "\n" + bankBalance);
+                }
+
                 //transactional write part
                 if (!inTransaction) {
                     try {
                         producer.commitTransaction();
-                        if (update) {
-                            System.out.println("UTXO updated: " + partitionBank.get(updatePartition) + "\n" + bankBalance);
-                        }
                     } catch (Exception e) {
                         producer.abortTransaction();
                         System.out.println("UTXO update failed.");

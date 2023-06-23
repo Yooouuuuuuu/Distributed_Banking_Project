@@ -59,7 +59,7 @@ public class consumeTransactions {
                     } else if (lastRecordTime < record.timestamp()){
                         lastRecordTime = record.timestamp();
                     }
-                    System.out.println(record.value().getTransactions().get(i));
+                    //System.out.println(record.value().getTransactions().get(i));
                     timeout = System.currentTimeMillis();
                 }
             }

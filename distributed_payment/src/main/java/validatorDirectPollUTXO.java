@@ -23,7 +23,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
-public class validator2 {
+public class validatorDirectPollUTXO {
     static KafkaConsumer<String, Block> consumerFromBlocks;
     static KafkaConsumer<String, Block> consumerFromUTXO;
     static KafkaConsumer<String, Block> consumerFromUTXOOffset;
@@ -36,6 +36,7 @@ public class validator2 {
     static boolean start = false;
     static long countForUpdateUTXO = 0;
     static long rejectedCount = 0;
+    static long UTXOCount = 0;
 
     public static void main(String[] args) throws Exception {
 /*
@@ -73,6 +74,9 @@ public class validator2 {
         boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
         boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
         boolean randomAmount = Boolean.parseBoolean(args[16]);
+        String log = args[17];
+        String transactionalId = args[18];
+
 
         /*
         String bootstrapServers = "127.0.0.1:9092";
@@ -85,10 +89,10 @@ public class validator2 {
         */
 
         //setups
-        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off");//"off", "trace", "debug", "info", "warn", "error"
+        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log);//"off", "trace", "debug", "info", "warn", "error"
         InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl);
-        InitProducer(bootstrapServers, schemaRegistryUrl);
-        Logger logger = LoggerFactory.getLogger(validator2.class);
+        InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId);
+        Logger logger = LoggerFactory.getLogger(validatorDirectPollUTXO.class);
         producer.initTransactions();
 
         for (int i = 0; i < numOfPartitions; i++) {
@@ -220,10 +224,10 @@ public class validator2 {
                 new KafkaConsumer<String, LocalBalance>(propsConsumerAssign);
     }
 
-    private static void InitProducer(String bootstrapServers, String schemaRegistryUrl) {
+    private static void InitProducer(String bootstrapServers, String schemaRegistryUrl, String transactionalId) {
         Properties propsProducer = new Properties();
         propsProducer.put("bootstrap.servers", bootstrapServers);
-        propsProducer.put("transactional.id", randomString());
+        propsProducer.put("transactional.id", transactionalId);
         propsProducer.put("transaction.timeout.ms", 300000);
         propsProducer.put("enable.idempotence", "true");
         propsProducer.put("max.block.ms", "1000");
@@ -307,13 +311,14 @@ public class validator2 {
 
                 //send UTXO every after transaction (if UTXODoNotAgg = true)
                 //build block
-                Transaction UTXOdetail = recordValue.getTransactions().get(i);
+                Transaction UTXODetail = recordValue.getTransactions().get(i);
                 List<Transaction> listOfUTXODetail = new ArrayList<Transaction>();
-                listOfUTXODetail.add(UTXOdetail);
+                listOfUTXODetail.add(UTXODetail);
                 Block UTXOBlock = Block.newBuilder()
                         .setTransactions(listOfUTXODetail)
                         .build();
                 //send
+                //System.out.println(UTXOBlock);
                 producer.send(new ProducerRecord<String, Block>("UTXO",
                         UTXOBlock.getTransactions().get(0).getInbankPartition(),
                         UTXOBlock.getTransactions().get(0).getInbank(),
@@ -413,7 +418,7 @@ public class validator2 {
                 lastOffsetOfUTXO.put(updatePartition, -1L);
 
                 TopicPartition topicPartition =
-                        new TopicPartition("UTXO", updatePartition);
+                        new TopicPartition("aggUTXOOffset", updatePartition);
                 consumerFromUTXOOffset.assign(Collections.singletonList(topicPartition));
                 consumerFromUTXOOffset.seekToEnd(Collections.singleton(topicPartition));
                 long latestOffset = consumerFromUTXOOffset.position(topicPartition);
@@ -469,19 +474,20 @@ public class validator2 {
                     ConsumerRecords<String, Block> UTXORecords = consumerFromUTXO.poll(Duration.ofMillis(60000));
                     for (ConsumerRecord<String, Block> UTXORecord : UTXORecords) {
                         //reset heartbeat since continuous polling
-                        for (int j = 0; j < UTXORecord.value().getTransactions().size(); j++) {
-                            //add UTXO to account
-                            long amount = UTXORecord.value().getTransactions().get(j).getAmount();
-                            bankBalance.compute(UTXORecord.value().getTransactions().get(j).getInAccount(),
-                                    (key, value) -> value + amount);
-                            // update "localBalance" topic
-                            LocalBalance newBalance =
-                                    new LocalBalance(bankBalance.get(UTXORecord.value().getTransactions().get(j).getOutAccount()));
-                            producer.send(new ProducerRecord<>("localBalance",
-                                    UTXORecord.value().getTransactions().get(j).getOutbankPartition(),
-                                    UTXORecord.value().getTransactions().get(j).getOutAccount(),
-                                    newBalance));
-                        }
+                        //add UTXO to account
+                        long amount = UTXORecord.value().getTransactions().get(0).getAmount();
+                        bankBalance.compute(UTXORecord.value().getTransactions().get(0).getInAccount(),
+                                (key, value) -> value + amount);
+                        // update "localBalance" topic
+                        //System.out.println(UTXORecord);
+                        UTXOCount += 1;
+                        LocalBalance newBalance =
+                                new LocalBalance(bankBalance.get(
+                                        UTXORecord.value().getTransactions().get(0).getInAccount()));
+                        producer.send(new ProducerRecord<>("localBalance",
+                                UTXORecord.value().getTransactions().get(0).getInbankPartition(),
+                                UTXORecord.value().getTransactions().get(0).getInAccount(),
+                                newBalance));
 
                         //build block of offset
                         lastOffsetOfUTXO.put(updatePartition, UTXORecord.offset());
@@ -525,13 +531,17 @@ public class validator2 {
                     //"every UTXO the transaction" before reject the transaction, thus we use seekToEnd find the latest
                     //offset. On the other hand, without the "inTransaction" flag, means it's just a regular update.
                 }
+
+                //if updated, print banks' balance
+                if (update) {
+                    System.out.println("UTXO count: " + UTXOCount);
+                    System.out.println("UTXO updated: " + partitionBank.get(updatePartition) + "\n" + bankBalance);
+                }
+
                 //transactional write part
                 if (!inTransaction) {
                     try {
                         producer.commitTransaction();
-                        if (update) {
-                            System.out.println("UTXO updated: " + partitionBank.get(updatePartition) + "\n" + bankBalance);
-                        }
                     } catch (Exception e) {
                         producer.abortTransaction();
                         System.out.println("UTXO update failed.");

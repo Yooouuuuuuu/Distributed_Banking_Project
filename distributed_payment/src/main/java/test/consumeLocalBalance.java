@@ -1,51 +1,54 @@
 package test;
 
+
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import my.avroSchema.LocalBalance;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
+import java.io.IOException;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.Properties;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.*;
 
 public class consumeLocalBalance {
-    public static void main(String[] args) throws InterruptedException {
+    static KafkaConsumer<String, LocalBalance> consumerFromLocalBalance;
+    public static void main(String[] args) throws InterruptedException, IOException {
 
         //inputs
+        String bootstrapServers = args[0];
+        String schemaRegistryUrl = args[1];
+
+        /*
         String bootstrapServers = "127.0.0.1:9092";
         String schemaRegistryUrl = "http://127.0.0.1:8081";
+         */
 
+        long lastRecordTime = 0;
         HashMap<String, Long> bankBalance = new HashMap<String, Long>();
 
-        Properties propsConsumerAssign = new Properties();
-        propsConsumerAssign.put("bootstrap.servers", bootstrapServers);
-        propsConsumerAssign.put("isolation.level", "read_committed");
-        propsConsumerAssign.put("enable.auto.commit", "false");
-        propsConsumerAssign.setProperty("key.deserializer", StringDeserializer.class.getName());
-        propsConsumerAssign.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
-        propsConsumerAssign.setProperty("schema.registry.url", schemaRegistryUrl);
-        propsConsumerAssign.setProperty("specific.avro.reader", "true");
+        Properties propsConsumer = new Properties();
+        propsConsumer.put("bootstrap.servers", bootstrapServers);
+        propsConsumer.put("group.id", "test-group" + ThreadLocalRandom.current().nextInt(0, 1000));
+        propsConsumer.put("auto.offset.reset", "earliest");
+        propsConsumer.put("enable.auto.commit", "false");
+        propsConsumer.put("isolation.level", "read_committed");
+        //avro part
+        propsConsumer.setProperty("key.deserializer", StringDeserializer.class.getName());
+        propsConsumer.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
+        propsConsumer.setProperty("schema.registry.url", schemaRegistryUrl);
+        propsConsumer.setProperty("specific.avro.reader", "true");
 
-        //consumer consume from "localBalance" topic
-        KafkaConsumer<String, LocalBalance> consumerFromLocalBalance =
-                new KafkaConsumer<>(propsConsumerAssign);
+        String input_topic = "localBalance";
+        consumerFromLocalBalance =
+                new KafkaConsumer<String, LocalBalance>(propsConsumer);
+        consumerFromLocalBalance.subscribe(Collections.singleton(input_topic));
 
-        //consumer assign to specific topicPartition
-        TopicPartition topicPartition =
-                new TopicPartition("localBalance", 0);
-        consumerFromLocalBalance.assign(Arrays.asList(topicPartition));
-
-        //find the latest offset, since that is all we need
-        consumerFromLocalBalance.seekToEnd(Collections.singleton(topicPartition));
-        long latestOffset = consumerFromLocalBalance.position(topicPartition);
-        boolean lastOffset = false;
-        System.out.println(latestOffset);
-
-        //poll data of specific topic partition from beginning to end
-        consumerFromLocalBalance.seek(topicPartition, 0);
+        long timeout = System.currentTimeMillis();
 
         outerLoop:
         while (true) {
@@ -54,14 +57,18 @@ public class consumeLocalBalance {
                 //System.out.println(balanceRecord);
                 bankBalance.compute(balanceRecord.key(), (key, value)
                         -> balanceRecord.value().getBalance());
-
-                System.out.println(balanceRecord.offset());
-                if (balanceRecord.offset() == latestOffset-2) {
-                    break outerLoop;
+                if (balanceRecord.timestamp() > lastRecordTime){
+                    lastRecordTime = balanceRecord.timestamp();
                 }
+                timeout = System.currentTimeMillis();
+            }
+            if (System.currentTimeMillis() - timeout > 10000) {
+                break;
             }
         }
-        System.out.println(bankBalance);
+        System.out.println("bank balance: " + bankBalance);
+        System.out.println("For localBalance topic:\nlast record end at: " + lastRecordTime);
+        System.in.read();
     }
 }
 

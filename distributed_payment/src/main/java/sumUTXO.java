@@ -48,6 +48,9 @@ public class sumUTXO {
         boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
         boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
         boolean randomAmount = Boolean.parseBoolean(args[16]);
+        String log = args[17];
+        String transactionalId = args[18];
+
 
         /*
         String bootstrapServers = "127.0.0.1:9092";
@@ -57,9 +60,9 @@ public class sumUTXO {
         */
 
         //setups
-        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off"); //"off", "trace", "debug", "info", "warn", "error".
+        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log); //"off", "trace", "debug", "info", "warn", "error".
         InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl);
-        InitProducer(bootstrapServers, schemaRegistryUrl);
+        InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId);
         Logger logger = LoggerFactory.getLogger(sumUTXO.class);
         producer.initTransactions();
         long startTime = System.currentTimeMillis();
@@ -148,10 +151,10 @@ public class sumUTXO {
         //assign to topicPartition later
     }
 
-    private static void InitProducer(String bootstrapServers, String schemaRegistryUrl) {
+    private static void InitProducer(String bootstrapServers, String schemaRegistryUrl, String transactionalId) {
         Properties propsProducer = new Properties();
         propsProducer.put("bootstrap.servers", bootstrapServers);
-        propsProducer.put("transactional.id", randomString()); //Should be different between validators to avoid being fenced due to same transactional.id.
+        propsProducer.put("transactional.id", transactionalId);
         propsProducer.put("enable.idempotence", "true");
         // avro part
         propsProducer.setProperty("key.serializer", StringSerializer.class.getName());

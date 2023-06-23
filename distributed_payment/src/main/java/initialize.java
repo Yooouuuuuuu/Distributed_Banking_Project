@@ -57,6 +57,7 @@ public class initialize {
         boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
         boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
         boolean randomAmount = Boolean.parseBoolean(args[16]);
+        String log = args[17];
 
 
         /*
@@ -77,7 +78,7 @@ public class initialize {
         */
 
         //props
-        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off"); //"off", "trace", "debug", "info", "warn", "error".
+        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log); //"off", "trace", "debug", "info", "warn", "error".
         Properties adminProps = new Properties();
         adminProps.put("bootstrap.servers", bootstrapServers);
         AdminClient adminClient = KafkaAdminClient.create(adminProps);

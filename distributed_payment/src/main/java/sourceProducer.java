@@ -16,6 +16,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class sourceProducer {
     static String outAccount;
     static String inAccount;
+    static long rejectedCount = 0;
 
     public static void main(String[] args) throws IOException {
 
@@ -37,6 +38,7 @@ public class sourceProducer {
         boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
         boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
         boolean randomAmount = Boolean.parseBoolean(args[16]);
+        String log = args[17];
 
         /*
         String bootstrapServers = "127.0.0.1:9092";
@@ -110,7 +112,7 @@ public class sourceProducer {
             }
 
             if (randomAmount) {
-                amountPerTransaction = ThreadLocalRandom.current().nextInt(1, 1000);
+                amountPerTransaction = ThreadLocalRandom.current().nextInt(1000, 10000);
             }
 
             //build block
@@ -131,6 +133,8 @@ public class sourceProducer {
             if (bankBalance.get(outAccount) - amountPerTransaction >= 0) {
                 bankBalance.compute(outAccount, (key, value) -> value - detail.getAmount());
                 bankBalance.compute(inAccount, (key, value) -> value + detail.getAmount());
+            } else {
+                rejectedCount += 1;
             }
         }
 
@@ -138,6 +142,7 @@ public class sourceProducer {
         producer.flush();
         producer.close();
         System.out.println(bankBalance);
+        System.out.println("rejected count: " + rejectedCount);
         //This bankBalance is for reference only,
         //if any transaction has been rejected, here shows the linearization result,
         //however our system is serialization only.
