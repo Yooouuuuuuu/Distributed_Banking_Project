@@ -40,7 +40,7 @@ blockTimeout=10000 #aggregator only
 
 aggUTXOTime=5000 #sumUTXO only, not used
 
-numOfData=10000000 #sourceProducer only
+numOfData=10000 #sourceProducer only
 amountPerTransaction=1 #sourceProducer only
 
 UTXOUpdatePeriod=100000000 #validator only
@@ -74,7 +74,7 @@ done
 #done
 
 echo "=== wait for rebalance === "
-sleep 20
+sleep 10
 
 echo "=== input data === "
 gnome-terminal -- java -cp /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar sourceProducer $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger
@@ -82,7 +82,6 @@ gnome-terminal -- java -cp /home/yooouuuuuuu/git-repos/Distributed_Banking_Proje
 echo "=== wait for processes end and kill === " 
 #sleep $waitTime
 read -n 1 -s -r -p "Press any key to continue"
-pkill -f 'distributed-payment-v1-1.0-SNAPSHOT.jar'
 
 echo -e "\n=== poll from transactions and successful topics === " 
 gnome-terminal -- java -cp /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/consumeTransactions $bootstrapServers $schemaRegistryUrl $maxPoll
