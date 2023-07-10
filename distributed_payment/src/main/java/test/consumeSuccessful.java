@@ -6,6 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.slf4j.simple.SimpleLogger;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -25,6 +26,7 @@ public class consumeSuccessful {
         String schemaRegistryUrl = args[1];
         int numOfPartitions = Integer.parseInt(args[2]);
         int numOfAccount = Integer.parseInt(args[3]);
+        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off");//"off", "trace", "debug", "info", "warn", "error"
 
         /*
         String bootstrapServers = "127.0.0.1:9092";
@@ -94,7 +96,7 @@ public class consumeSuccessful {
                 break;
             }
         }
-        System.out.println("bankBalance: " + bankBalance);
+        System.out.println("bank balance: " + bankBalance);
         System.out.println("successful records counts: " + count);
         System.out.println("For successful topic:\nfirst record end at: " + firstRecordTime + "\nlast record end at: " + lastRecordTime);
         System.in.read();

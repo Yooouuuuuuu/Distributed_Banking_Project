@@ -6,6 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.slf4j.simple.SimpleLogger;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -20,6 +21,7 @@ public class consumeTransactions {
         //inputs
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
+        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off");//"off", "trace", "debug", "info", "warn", "error"
 
         /*
         String bootstrapServers = "127.0.0.1:9092";

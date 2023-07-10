@@ -141,7 +141,7 @@ public class sourceProducer {
         //flush and close producer
         producer.flush();
         producer.close();
-        System.out.println("bankBalance: " + bankBalance);
+        System.out.println("bank balance: " + bankBalance);
         System.out.println("rejected count: " + rejectedCount);
         //This bankBalance is for reference only,
         //if any transaction has been rejected, here shows the linearization result,
