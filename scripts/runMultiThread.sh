@@ -29,30 +29,30 @@
 
 bootstrapServers="127.0.0.1:9092"
 schemaRegistryUrl="http://127.0.0.1:8081"
-numOfPartitions=3
+numOfPartitions=2
 numOfAccounts=3
 numOfReplicationFactor=1
 initBalance=100000000
 maxPoll=1000
-blockSize=500
+blockSize=600
 
 blockTimeout=10000 #aggregator only
 
 aggUTXOTime=5000 #sumUTXO only, not used
 
-numOfData=10000 #sourceProducer only
+numOfData=1000000 #sourceProducer only
 amountPerTransaction=1 #sourceProducer only
 
 UTXOUpdatePeriod=100000000 #validator only
 UTXOUpdateBreakTime=1000 #validator only
-successfulMultiplePartition="true"
+successfulMultiplePartition="false"
 UTXODoNotAgg="true"
 randomAmount="false" #1000-100000
 logger="off" #"off", "trace", "debug", "info", "warn", "error"
 
 #args used script
 numOfaggregators=1
-numOfvalidators=3
+numOfvalidators=2
 
 #waitTime=1000 #secs wait for validations
 
@@ -65,7 +65,7 @@ for i in $( eval echo {1..$numOfaggregators} )
 done
 
 for i in $( eval echo {1..$numOfvalidators} )
-  do gnome-terminal -- java -cp /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar validatorDirectPollUTXOMultiThread $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger ${i}validator
+  do gnome-terminal -- java -cp /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar validatorDirectPollUTXOMultiThread3 $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger ${i}validator
 done
 
 echo "=== wait for rebalance === "
@@ -74,7 +74,7 @@ sleep 5s
 echo "=== input data === "
 gnome-terminal -- java -cp /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar sourceProducer $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $randomUpdate $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger
 
-echo "=== wait for processes end and kill === " 
+echo "=== wait for processes end === " 
 #sleep $waitTime
 read -n 1 -s -r -p "Press any key to continue"
 
