@@ -25,30 +25,10 @@ public class sourceProducer {
         String schemaRegistryUrl = args[1];
         int numOfPartitions = Integer.parseInt(args[2]);
         int numOfAccounts = Integer.parseInt(args[3]);
-        short numOfReplicationFactor = Short.parseShort(args[4]);
         long initBalance = Long.parseLong(args[5]);
-        int maxPoll = Integer.parseInt(args[6]);
-        int blockSize = Integer.parseInt(args[7]);
-        long blockTimeout = Long.parseLong(args[8]); //aggregator only
-        long aggUTXOTime = Long.parseLong(args[9]); //sumUTXO only
         long numOfData = Long.parseLong(args[10]); //sourceProducer only
         long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
-        long UTXOUpdatePeriod = Long.parseLong(args[12]); //validator only
-        int UTXOUpdateBreakTime = Integer.parseInt(args[13]); //validator only
-        boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
-        boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
         boolean randomAmount = Boolean.parseBoolean(args[16]);
-        String log = args[17];
-
-        /*
-        String bootstrapServers = "127.0.0.1:9092";
-        String schemaRegistryUrl = "http://127.0.0.1:8081";
-        int numOfPartitions = 3;
-        int numOfAccounts = 10;
-        long initBalance = 1000000L;
-        long numOfData = 10000;
-        long amountPerTransaction = 100L; //per transaction
-        */
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off"); //"off", "trace", "debug", "info", "warn", "error".
@@ -74,6 +54,7 @@ public class sourceProducer {
             }
             banks += 1;
         }
+
         //create producer
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", bootstrapServers);
@@ -126,7 +107,6 @@ public class sourceProducer {
             Block output = Block.newBuilder()
                     .setTransactions(listOfDetail)
                     .build();
-            //System.out.println(output);
 
             //send
             producer.send(new ProducerRecord<String, Block>("transactions", outBankNum, bank.get(outBankNum), output));
@@ -141,12 +121,15 @@ public class sourceProducer {
         //flush and close producer
         producer.flush();
         producer.close();
+
+        //print result
         System.out.println("bank balance: " + bankBalance);
         System.out.println("rejected count: " + rejectedCount);
         //This bankBalance is for reference only,
         //if any transaction has been rejected, here shows the linearization result,
-        //however our system is serialization only.
+        //however our system is not even serialization.
 
         System.in.read();
+
     }
 }

@@ -17,28 +17,6 @@ import java.util.*;
 public class initialize {
     public static void main(String[] args) throws Exception {
 
-        /*
-        args[0]: bootstrap.Servers
-        args[1]: schema.RegistryUrl
-        args[2]: # of partitions
-        args[3]: # of accounts
-        args[4]: # of replica
-        args[5]: init balance of each bank
-        args[6]: "max.poll.records"
-        args[7]: block size
-
-        args[8]: timeout of aggregating transactions to a block for aggregator
-
-        args[9]: timeout of aggregating transactions as UTXO for sumUTXO
-
-        args[10]: # of data (transactions)
-        args[11]: amount per transaction
-
-        args[11]: timeout of validator update accounts' UTXO
-        args[12]: maximum time for validator to update UTXO
-        args[13]: randomly update UTXO or not
-        */
-
         //inputs
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
@@ -46,46 +24,20 @@ public class initialize {
         int numOfAccounts = Integer.parseInt(args[3]);
         short numOfReplicationFactor = Short.parseShort(args[4]);
         long initBalance = Long.parseLong(args[5]);
-        int maxPoll = Integer.parseInt(args[6]);
-        int blockSize = Integer.parseInt(args[7]);
-        long blockTimeout = Long.parseLong(args[8]); //aggregator only
-        long aggUTXOTime = Long.parseLong(args[9]); //sumUTXO only
-        long numOfData = Long.parseLong(args[10]); //sourceProducer only
-        long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
-        long UTXOUpdatePeriod = Long.parseLong(args[12]); //validator only
-        int UTXOUpdateBreakTime = Integer.parseInt(args[13]); //validator only
         boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
         boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
-        boolean randomAmount = Boolean.parseBoolean(args[16]);
         String log = args[17];
 
-
-        /*
-        String bootstrapServers = "127.0.0.1:9092";
-        String schemaRegistryUrl = "http://127.0.0.1:8081";
-        int numOfPartitions = 3;
-        int numOfAccounts = 1000;
-        short numOfReplicationFactor = 1;
-        long initBalance = 1000000L;
-        int maxPoll = 500;
-        int blockSize = 500;
-        long blockTimeout = 10000; //aggregator only
-        long aggUTXOTime = 10000; //sumUTXO only
-        long numOfData = 10000; //sourceProducer only
-        long UTXOUpdatePeriod = 10000; //validator only
-        int UTXOUpdateBreakTime = 1000; //validator only
-        boolean randomUpdate = true; //validator only
-        */
-
-        //props
+        // log setting
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log); //"off", "trace", "debug", "info", "warn", "error".
+
+        // create AdminClient
         Properties adminProps = new Properties();
         adminProps.put("bootstrap.servers", bootstrapServers);
         AdminClient adminClient = KafkaAdminClient.create(adminProps);
 
         // delete topics
-        adminClient.deleteTopics(Arrays.asList("transactions", "blocks", "successful", "rejected", "localBalance", "UTXO", "aggUTXO", "aggUTXOOffset", "accountInfo"));
-        //System.in.read();
+        adminClient.deleteTopics(Arrays.asList("transactions", "blocks", "successful", "rejected", "localBalance", "UTXO", "aggUTXO", "aggUTXOOffset", "accountInfo", "UTXOOffset"));
 
         // create topics
         String topic_name1 = "blocks";
@@ -105,8 +57,7 @@ public class initialize {
         NewTopic topic_03;
         String topic_name4 = "rejected";
         NewTopic topic_04;
-        String topic_name6 = "UTXO";
-        NewTopic topic_06;
+
 
         if (successfulMultiplePartition) {
             topic_03 = new NewTopic(topic_name3, numOfPartitions, numOfReplicationFactor);
@@ -119,40 +70,66 @@ public class initialize {
         String topic_name5 = "transactions";
         NewTopic topic_05 = new NewTopic(topic_name5, numOfPartitions, numOfReplicationFactor);
 
-        if (UTXODoNotAgg) {
-            topic_06 = new NewTopic(topic_name6, numOfPartitions, numOfReplicationFactor); //optional on partition
-        } else {
-            topic_06 = new NewTopic(topic_name6, 1, numOfReplicationFactor); //optional on partition
-        }
-
-        String topic_name7 = "aggUTXO";
+        //sometimes changed
+        String topic_name6 = "UTXO";
+        NewTopic topic_06 = new NewTopic(topic_name6, numOfPartitions, numOfReplicationFactor);
+        String topic_name7 = "UTXOOffset";
         NewTopic topic_07 = new NewTopic(topic_name7, numOfPartitions, numOfReplicationFactor);
-        String topic_name8 = "aggUTXOOffset";
-        NewTopic topic_08 = new NewTopic(topic_name8, numOfPartitions, numOfReplicationFactor);
-        String topic_name9 = "accountInfo";
-        NewTopic topic_09 = new NewTopic(topic_name9, numOfPartitions, numOfReplicationFactor);
 
-        Thread.sleep(10000); //wait 10 sec in case that the topic deletion is late
-        CreateTopicsResult result = adminClient.createTopics(Arrays.asList(topic_01, topic_02, topic_03, topic_04, topic_05, topic_06, topic_07, topic_08, topic_09));
+        if (UTXODoNotAgg) {
+            Thread.sleep(10000); //wait 10 sec in case that the topic deletion is late
+            CreateTopicsResult result = adminClient.createTopics(Arrays.asList(topic_01, topic_02, topic_03, topic_04, topic_05, topic_06, topic_07));
 
-        // check if topic created successfully
-        for(Map.Entry entry : result.values().entrySet()) {
-            String topic_name = (String) entry.getKey();
-            boolean success = true;
-            String error_msg = "";
-            try {
-                ((KafkaFuture<Void>) entry.getValue()).get();
-            } catch (Exception e) {
-                success = false;
-                error_msg = e.getMessage();
+            // check if topic created successfully
+            for(Map.Entry entry : result.values().entrySet()) {
+                String topic_name = (String) entry.getKey();
+                boolean success = true;
+                String error_msg = "";
+                try {
+                    ((KafkaFuture<Void>) entry.getValue()).get();
+                } catch (Exception e) {
+                    success = false;
+                    error_msg = e.getMessage();
+                }
+                if (success)
+                    System.out.println("Topic: " + topic_name + " creation completed!");
+                else
+                    System.out.println("Topic: " + topic_name + " creation fail, due to [" + error_msg + "]");
             }
-            if (success)
-                System.out.println("Topic: " + topic_name + " creation completed!");
-            else
-                System.out.println("Topic: " + topic_name + " creation fail, due to [" + error_msg + "]");
-        }
-        adminClient.close();
+            adminClient.close();
 
+        }else {
+            topic_06 = new NewTopic(topic_name6, 1, numOfReplicationFactor); //optional on partition
+            String aggUTXOOffset = "aggUTXOOffset";
+            topic_07 = new NewTopic(aggUTXOOffset, numOfPartitions, numOfReplicationFactor);
+            String topic_name8 = "aggUTXO";
+            NewTopic topic_08 = new NewTopic(topic_name8, numOfPartitions, numOfReplicationFactor);
+            String topic_name9 = "accountInfo";
+            NewTopic topic_09 = new NewTopic(topic_name9, numOfPartitions, numOfReplicationFactor);
+
+            Thread.sleep(10000); //wait 10 sec in case that the topic deletion is late
+            CreateTopicsResult result = adminClient.createTopics(Arrays.asList(topic_01, topic_02, topic_03, topic_04, topic_05, topic_06, topic_07, topic_08, topic_09));
+
+            // check if topic created successfully
+            for (Map.Entry entry : result.values().entrySet()) {
+                String topic_name = (String) entry.getKey();
+                boolean success = true;
+                String error_msg = "";
+                try {
+                    ((KafkaFuture<Void>) entry.getValue()).get();
+                } catch (Exception e) {
+                    success = false;
+                    error_msg = e.getMessage();
+                }
+                if (success)
+                    System.out.println("Topic: " + topic_name + " creation completed!");
+                else
+                    System.out.println("Topic: " + topic_name + " creation fail, due to [" + error_msg + "]");
+            }
+            adminClient.close();
+        }
+
+        // init data
         // initialize kafka producer
         Properties propsProducer = new Properties();
         propsProducer.put("bootstrap.servers", bootstrapServers);

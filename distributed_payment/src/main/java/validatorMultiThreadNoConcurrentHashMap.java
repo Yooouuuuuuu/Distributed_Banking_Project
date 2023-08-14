@@ -21,82 +21,42 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
-public class validatorDirectPollUTXOMultiThread2 {
+public class validatorMultiThreadNoConcurrentHashMap {
     static KafkaConsumer<String, Block> consumerFromBlocks;
     static KafkaConsumer<String, Block> consumerFromUTXO;
     static KafkaConsumer<String, Block> consumerFromUTXOOffset;
     static KafkaConsumer<String, LocalBalance> consumerFromLocalBalance;
     static KafkaProducer producer;
     static KafkaProducer producer2;
-
-    static Map<String, Long> bankBalance = new ConcurrentHashMap<>();
-    //static Map<String, Long> bankBalance = Collections.synchronizedMap(new HashMap<>());
-    //static Hashtable<String, Long> bankBalance = new Hashtable<>();
-    static Map<Integer, String> partitionBank = new ConcurrentHashMap<>();
+    static Map<String, Long> bankBalance = new HashMap<>();
+    static Map<Integer, String> partitionBank = new HashMap<>();
     static HashMap<Integer, Long> lastOffsetOfUTXO = new HashMap<>();
     static long rejectedCount = 0;
     static volatile boolean threadsStopFlag = false;
     static volatile boolean repartitionFlag = true;
     static  ArrayList<Long> consumeList = new ArrayList<Long>(); //only for testing
+    private static final ReentrantLock lock = new ReentrantLock();
+
 
     public static void main(String[] args) throws Exception {
-/*
-        need to test 2 version of UTXOs, one write the same currentBlock intoUTXO topic,
-        while the other send UTXOs depends on its inbank.
-        for the first case, partition don't need to be specified.
-        maybe a version 3: very big UTXOs place in special partition(or topic)
-
-        leaderEpoch
-
-        If we want to poll from a specific topicPartition, we have to use assign function,
-        however, the assign function ignores consumer groups and will not record the last offset for us.
-        It isn't a problem if we are updating the state (and only poll the latest offset),
-        but while polling from topic "aggUTXO", we need another topic to store the last offset of the topicPartition.
-
-        Kafka transaction allows only single producer, while a producer can have only one serializer.
-        However,avro is a flexible type that we can define multiple avro schema for different use should be well.
- */
 
         //inputs
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
-        int numOfPartitions = Integer.parseInt(args[2]);
-        int numOfAccounts = Integer.parseInt(args[3]);
-        short numOfReplicationFactor = Short.parseShort(args[4]);
-        long initBalance = Long.parseLong(args[5]);
         int maxPoll = Integer.parseInt(args[6]);
-        int blockSize = Integer.parseInt(args[7]);
-        long blockTimeout = Long.parseLong(args[8]); //aggregator only
-        long aggUTXOTime = Long.parseLong(args[9]); //sumUTXO only
-        long numOfData = Long.parseLong(args[10]); //sourceProducer only
-        long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
-        long UTXOUpdatePeriod = Long.parseLong(args[12]); //validator only
-        int UTXOUpdateBreakTime = Integer.parseInt(args[13]); //validator only
         boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
-        boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
-        boolean randomAmount = Boolean.parseBoolean(args[16]);
         String log = args[17];
         String transactionalId = args[18];
-
-        /*
-        String bootstrapServers = "127.0.0.1:9092";
-        String schemaRegistryUrl = "http://127.0.0.1:8081";
-        int numOfPartitions = 3;
-        int maxPoll = 500;
-        long UTXOUpdatePeriod = 10000;
-        int UTXOUpdateBreakTime = 1000;
-        boolean randomUpdate = true;
-        */
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log);//"off", "trace", "debug", "info", "warn", "error"
         InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl);
         InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId);
-        Logger logger = LoggerFactory.getLogger(validatorDirectPollUTXOMultiThread2.class);
+        Logger logger = LoggerFactory.getLogger(validatorMultiThreadNoConcurrentHashMap.class);
 
         //thread 1
         Thread pollBlocksThread = new Thread(new Runnable() {
@@ -115,32 +75,35 @@ public class validatorDirectPollUTXOMultiThread2 {
                             //logger.info(record.value().toString());
                             //Start atomically transactional write. One block per transactional write.
                             producer.beginTransaction();
-                            //As outbank, withdraw money and create UTXO for inbank. Category 0 means it is a raw transaction.
-                            if (record.value().getTransactions().get(0).getCategory() == 0) {
-                                try {
-                                    ProcessBlocks(record.value(), UTXOUpdatePeriod, UTXOUpdateBreakTime, successfulMultiplePartition);
-                                    transactionCounts += record.value().getTransactions().size();
-                                    //System.out.println("transaction counts: " + transactionCounts);
-
-                                } catch (InterruptedException | ExecutionException | IOException e) {
-                                }
-                                //System.out.println(bankBalance);
-                            } else if (record.value().getTransactions().get(0).getCategory() == 2) {
-                                //Category 2 means it is an initialize record for accounts' balance. Only do once when system start.
-                                try {
-                                    InitBank(record.value(), record);
-                                } catch (InterruptedException | ExecutionException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
                             try {
+                                lock.lock();
+                                //As outbank, withdraw money and create UTXO for inbank. Category 0 means it is a raw transaction.
+                                if (record.value().getTransactions().get(0).getCategory() == 0) {
+                                    try {
+                                        ProcessBlocks(record.value(), successfulMultiplePartition);
+                                        transactionCounts += record.value().getTransactions().size();
+                                        //System.out.println("transaction counts: " + transactionCounts);
+
+                                    } catch (InterruptedException | ExecutionException | IOException e) {
+                                    }
+                                    //System.out.println(bankBalance);
+                                } else if (record.value().getTransactions().get(0).getCategory() == 2) {
+                                    //Category 2 means it is an initialize record for accounts' balance. Only do once when system start.
+                                    try {
+                                        InitBank(record.value(), record);
+                                    } catch (InterruptedException | ExecutionException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                }
                                 consumerFromBlocks.commitSync();
                                 producer.commitTransaction();
+                                lock.unlock();
                             } catch (Exception e) {
                                 //if kafka TX aborted, set the flag to end all threads.
                                 producer.abortTransaction();
                                 System.out.println(Thread.currentThread().getName() + "Tx aborted.");
                                 threadsStopFlag = true;
+                                lock.unlock();
                             }
                         }
                     }
@@ -207,8 +170,8 @@ public class validatorDirectPollUTXOMultiThread2 {
                     @Override
                     public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
                         //reset hashmaps and flag
-                        bankBalance = new ConcurrentHashMap<String, Long>();
-                        partitionBank = new ConcurrentHashMap<>();
+                        bankBalance = new HashMap<String, Long>();
+                        partitionBank = new HashMap<>();
                         lastOffsetOfUTXO = new HashMap<>();
                         repartitionFlag = true;
                         System.out.println("validator is rebalanced. Reset hashmaps.");
@@ -224,16 +187,11 @@ public class validatorDirectPollUTXOMultiThread2 {
         propsConsumerAssign.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
         propsConsumerAssign.setProperty("schema.registry.url", schemaRegistryUrl);
         propsConsumerAssign.setProperty("specific.avro.reader", "true");
-        //consumer consume from "aggUTXO" topic
+        //consumer consume from "UTXO" topic
         consumerFromUTXO =
                 new KafkaConsumer<String, Block>(propsConsumerAssign);
-        // We want to poll the partitions (banks) if and only if they are relevant to this validator,
-        // however it is impossible if using "subscribe".
-        // "Assign" can poll the specific topicPartition thus do not "subscribe" here,
-        // but the assign function ignores the consumer group and do not commit the offset,
-        // so we need to save the last poll offset manually to UTXOOffset.
 
-        //consumer consume from "aggUTXOOffset" topic
+        //consumer consume from "UTXOOffset" topic
         consumerFromUTXOOffset =
                 new KafkaConsumer<String, Block>(propsConsumerAssign);
 
@@ -291,8 +249,7 @@ public class validatorDirectPollUTXOMultiThread2 {
         System.out.println("Initialized. Now in charge of: " + partitionBank + " (partition:bank)");
     }
 
-    private static void ProcessBlocks(Block recordValue, long updatePeriod, int updateBreakTime,
-                                      boolean successfulMultiplePartition)
+    private static void ProcessBlocks(Block recordValue, boolean successfulMultiplePartition)
             throws ExecutionException, IOException, InterruptedException {
         //initialize block
         Block currentBlock = recordValue;
@@ -312,32 +269,6 @@ public class validatorDirectPollUTXOMultiThread2 {
             //If the out account have enough money, pay for it.
             if (bankBalance.get(recordValue.getTransactions().get(i).getOutAccount())
                     >= recordValue.getTransactions().get(i).getAmount()) {
-                long withdraw = currentBlock.getTransactions().get(i).getAmount();
-                bankBalance.compute(recordValue.getTransactions().get(i).getOutAccount(), (key, value)
-                        -> value - withdraw);
-
-                // update "localBalance" topic
-                LocalBalance newBalance =
-                        new LocalBalance(bankBalance.get(recordValue.getTransactions().get(i).getOutAccount()));
-                producer.send(new ProducerRecord<String, LocalBalance>("localBalance",
-                        recordValue.getTransactions().get(0).getOutbankPartition(),
-                        recordValue.getTransactions().get(i).getOutAccount(),
-                        newBalance));
-
-                //send UTXO every after transaction (if UTXODoNotAgg = true)
-                //build block
-                Transaction UTXODetail = recordValue.getTransactions().get(i);
-                List<Transaction> listOfUTXODetail = new ArrayList<Transaction>();
-                listOfUTXODetail.add(UTXODetail);
-                Block UTXOBlock = Block.newBuilder()
-                        .setTransactions(listOfUTXODetail)
-                        .build();
-                //send
-                //System.out.println(UTXOBlock);
-                producer.send(new ProducerRecord<String, Block>("UTXO",
-                        UTXOBlock.getTransactions().get(0).getInbankPartition(),
-                        UTXOBlock.getTransactions().get(0).getInbank(),
-                        UTXOBlock));
 
             } else {
                 rejected = true;
@@ -350,10 +281,6 @@ public class validatorDirectPollUTXOMultiThread2 {
             }
         }
 
-        //send blocks to kafka topics
-        //1. If any transaction is rejected, send a block to "rejected" topic.
-        //2. Send all successful transactions in the same block to "successful" topic.
-        //3. Rejected block size may be more than one; and successful block may be less than raw block.
         if (rejected) {
             for (int i = 1; i <= listOfRejectedIndex.size(); i++) {
                 currentBlock.getTransactions().remove((int)listOfRejectedIndex.get(listOfRejectedIndex.size() - i));
@@ -362,7 +289,34 @@ public class validatorDirectPollUTXOMultiThread2 {
                 rejectedBlock = Block.newBuilder().setTransactions(listOfRejected).build();
                 producer.send(new ProducerRecord<String, Block>("rejected", rejectedBlock));
         }
-        //4. "successful" is single partition for serialization
+
+
+        for (int i = 0; i < currentBlock.getTransactions().size(); i++) {
+            long withdraw = currentBlock.getTransactions().get(i).getAmount();
+            bankBalance.compute(recordValue.getTransactions().get(i).getOutAccount(), (key, value)
+                    -> value - withdraw);
+
+            // update "localBalance" topic
+            LocalBalance newBalance =
+                    new LocalBalance(bankBalance.get(recordValue.getTransactions().get(i).getOutAccount()));
+            producer.send(new ProducerRecord<String, LocalBalance>("localBalance",
+                    recordValue.getTransactions().get(0).getOutbankPartition(),
+                    recordValue.getTransactions().get(i).getOutAccount(),
+                    newBalance));
+
+            //send UTXO
+            Transaction UTXODetail = recordValue.getTransactions().get(i);
+            List<Transaction> listOfUTXODetail = new ArrayList<Transaction>();
+            listOfUTXODetail.add(UTXODetail);
+            Block UTXOBlock = Block.newBuilder()
+                    .setTransactions(listOfUTXODetail)
+                    .build();
+            producer.send(new ProducerRecord<String, Block>("UTXO",
+                    UTXOBlock.getTransactions().get(0).getInbankPartition(),
+                    UTXOBlock.getTransactions().get(0).getInbank(),
+                    UTXOBlock));
+        }
+
         if (!successfulMultiplePartition) {
             producer.send(new ProducerRecord<String, Block>("successful", currentBlock));
         } else {
@@ -378,81 +332,75 @@ public class validatorDirectPollUTXOMultiThread2 {
         //if thread-0's kafka consumer repartition, init the UTXO consumer.
         while (!threadsStopFlag) {
             while (repartitionFlag) {
-            Thread.sleep(10000);
-            partitionBank.forEach((key, value) -> {
-                int updatePartition = key;
-
-                //poll last read offset if reset
-                if (!lastOffsetOfUTXO.containsKey(updatePartition)) {
-                    lastOffsetOfUTXO.put(updatePartition, -1L);
-
-                    TopicPartition topicPartition =
-                            new TopicPartition("aggUTXOOffset", updatePartition);
-                    consumerFromUTXOOffset.assign(Collections.singletonList(topicPartition));
-                    consumerFromUTXOOffset.seekToEnd(Collections.singleton(topicPartition));
-                    long latestOffset = consumerFromUTXOOffset.position(topicPartition);
-
-                    if (latestOffset > 0) {
-                        outerLoop:
-                        while (true) {
-                            consumerFromUTXOOffset.seek(topicPartition, latestOffset);
-                            ConsumerRecords<String, Block> offsetRecords =
-                                    consumerFromUTXOOffset.poll(Duration.ofMillis(100));
-                            for (ConsumerRecord<String, Block> offsetRecord : offsetRecords) {
-                                lastOffsetOfUTXO.put(updatePartition,
-                                        offsetRecord.value().getTransactions().get(0).getAmount());
-                                //break once poll anything
-                                break outerLoop;
-                            }
-                            //latestOffset might be unreadable, thus check latestOffset -1
-                            latestOffset -= 1;
-                            if (latestOffset < 0) {
-                                break;
-                            }
-                        }
-                        System.out.println("Poll from aggUTXOOffset: " + lastOffsetOfUTXO + " (partition:offset)");
-                    }
-                }
-            });
-
-
-            //assign topicPartition
-            TopicPartition partitions[] = new TopicPartition[partitionBank.size()];
-            AtomicInteger count = new AtomicInteger();
-
-
-            if (partitionBank.size() != 0) {
-                System.out.println(partitionBank + " "+ partitionBank.size());
+                Thread.sleep(10000);
                 partitionBank.forEach((key, value) -> {
-                    //partitions[10] = new TopicPartition("UTXO", key);
-                    partitions[count.intValue()] = new TopicPartition("UTXO", key);
-                    count.addAndGet(1);
+                    int updatePartition = key;
+
+                    //poll last read offset if reset
+                    if (!lastOffsetOfUTXO.containsKey(updatePartition)) {
+                        lastOffsetOfUTXO.put(updatePartition, -1L);
+
+                        TopicPartition topicPartition =
+                                new TopicPartition("UTXOOffset", updatePartition);
+                        consumerFromUTXOOffset.assign(Collections.singletonList(topicPartition));
+                        consumerFromUTXOOffset.seekToEnd(Collections.singleton(topicPartition));
+                        long latestOffset = consumerFromUTXOOffset.position(topicPartition);
+
+                        if (latestOffset > 0) {
+                            outerLoop:
+                            while (true) {
+                                consumerFromUTXOOffset.seek(topicPartition, latestOffset);
+                                ConsumerRecords<String, Block> offsetRecords =
+                                        consumerFromUTXOOffset.poll(Duration.ofMillis(100));
+                                for (ConsumerRecord<String, Block> offsetRecord : offsetRecords) {
+                                    lastOffsetOfUTXO.put(updatePartition,
+                                            offsetRecord.value().getTransactions().get(0).getAmount());
+                                    //break once poll anything
+                                    break outerLoop;
+                                }
+                                //latestOffset might be unreadable, thus check latestOffset -1
+                                latestOffset -= 1;
+                                if (latestOffset < 0) {
+                                    break;
+                                }
+                            }
+                            System.out.println("Poll from UTXOOffset: " + lastOffsetOfUTXO + " (partition:offset)");
+                        }
+                    }
                 });
-            //}
 
-            //if its empty, try again until thread-0 finish its job.
-            //if (!Arrays.asList(partitions).isEmpty()) {
 
-                System.out.println(Arrays.asList(partitions));
-                consumerFromUTXO.assign(Arrays.asList(partitions));
-                //assign success only if we wait for thread-0 to go first,
-                //we'll face the same problem when poll UTXOOffset
+                //assign topicPartition
+                TopicPartition partitions[] = new TopicPartition[partitionBank.size()];
+                AtomicInteger count = new AtomicInteger();
 
-                //seek offset for all topicPartition
-                for (int i = 0; i < partitionBank.size(); i++) {
-                    consumerFromUTXO.seek(partitions[i], lastOffsetOfUTXO.get(partitions[i].partition()) + 1);
+
+                if (partitionBank.size() != 0) {
+                    System.out.println(partitionBank + " " + partitionBank.size());
+                    partitionBank.forEach((key, value) -> {
+                        //partitions[10] = new TopicPartition("UTXO", key);
+                        partitions[count.intValue()] = new TopicPartition("UTXO", key);
+                        count.addAndGet(1);
+                    });
+
+                    System.out.println(Arrays.asList(partitions));
+                    consumerFromUTXO.assign(Arrays.asList(partitions));
+                    //assign success only if we wait for thread-0 to go first,
+                    //we'll face the same problem when poll UTXOOffset
+
+                    //seek offset for all topicPartition
+                    for (int i = 0; i < partitionBank.size(); i++) {
+                        consumerFromUTXO.seek(partitions[i], lastOffsetOfUTXO.get(partitions[i].partition()) + 1);
+                    }
+                    repartitionFlag = false;
                 }
-                repartitionFlag = false;
             }
-        }
-            //while (!threadsStopFlag) {
-            //start consuming from kafka
 
             producer2.beginTransaction();
-
+            try {
                 ConsumerRecords<String, Block> UTXORecords = consumerFromUTXO.poll(Duration.ofMillis(100));
+                lock.lock();
                 for (ConsumerRecord<String, Block> UTXORecord : UTXORecords) {
-
                     consumeList.add(UTXORecord.value().getTransactions().get(0).getSerialNumber());
                     if (consumeList.size() % 10000 == 0) {
                         System.out.println("UTXO consumed counts: " + consumeList.size());
@@ -473,7 +421,7 @@ public class validatorDirectPollUTXOMultiThread2 {
                             UTXORecord.value().getTransactions().get(0).getInAccount(),
                             newBalance));
 
-                    //build block of (UTXO) offset
+                    //update UTXO offset
                     lastOffsetOfUTXO.put(updatePartition, UTXORecord.offset());
                     String bank = partitionBank.get(updatePartition);
                     Transaction detail = new Transaction(-1L,
@@ -485,36 +433,25 @@ public class validatorDirectPollUTXOMultiThread2 {
                     Block offsetBlock = Block.newBuilder()
                             .setTransactions(listOfDetail)
                             .build();
-
-                    //update "aggUTXOOffset" topic (UTXO Offset)
-                    //topic name should be change
-                    producer2.send(new ProducerRecord<>("aggUTXOOffset",
+                    producer2.send(new ProducerRecord<>("UTXOOffset",
                             updatePartition,
                             partitionBank.get(updatePartition),
                             offsetBlock));
                 }
-                try {
-                    producer2.commitTransaction();
-                    //System.out.println(bankBalance);
+                producer2.commitTransaction();
+                lock.unlock();
 
-                } catch (Exception e) {
-                    producer2.abortTransaction();
-                    System.out.println(Thread.currentThread().getName() + "Tx aborted. (UTXO update failed)");
-                    threadsStopFlag = true;
-                }
-            //}
+            } catch (Exception e) {
+                producer2.abortTransaction();
+                System.out.println(Thread.currentThread().getName() + "Tx aborted. (UTXO update failed)");
+                threadsStopFlag = true;
+                lock.unlock();
+
+            }
         }
     }
 
     private static void PollFromLocalBalance(int outbankPartition, String bankID) {
-        //In v3, we change the strategy of saving state in "localBalance" topic.
-        //We saved every account's balance of the bank in every record, while it is mostly redundant,
-        //we tried to save one account's balance per record in v3.
-
-        //Followed the new strategy, we have to poll "localBalance" topic from beginning to end rather than latest only.
-        //"cleanup.policy = compact" is used to lessen the record we need to poll from beginning to end
-
-        //consumer assign to specific topicPartition
         TopicPartition topicPartition =
                 new TopicPartition("localBalance", outbankPartition);
         consumerFromLocalBalance.assign(Collections.singletonList(topicPartition));
@@ -543,11 +480,6 @@ public class validatorDirectPollUTXOMultiThread2 {
         System.out.println("Poll from localBalance. Now in charge of: " + partitionBank + " (partition:bank)");
     }
 
-    public static String randomString() {
-        byte[] array = new byte[32]; // length is bounded by 32
-        new Random().nextBytes(array);
-        return new String(array, StandardCharsets.UTF_8);
-    }
 }
 
 

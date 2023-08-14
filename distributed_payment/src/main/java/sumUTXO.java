@@ -12,10 +12,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.simple.SimpleLogger;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 
@@ -33,37 +30,15 @@ public class sumUTXO {
         //inputs
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
-        int numOfPartitions = Integer.parseInt(args[2]);
-        int numOfAccounts = Integer.parseInt(args[3]);
-        short numOfReplicationFactor = Short.parseShort(args[4]);
-        long initBalance = Long.parseLong(args[5]);
         int maxPoll = Integer.parseInt(args[6]);
-        int blockSize = Integer.parseInt(args[7]);
-        long blockTimeout = Long.parseLong(args[8]); //aggregator only
         long aggUTXOTime = Long.parseLong(args[9]); //sumUTXO only
-        long numOfData = Long.parseLong(args[10]); //sourceProducer only
-        long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
-        long UTXOUpdatePeriod = Long.parseLong(args[12]); //validator only
-        int UTXOUpdateBreakTime = Integer.parseInt(args[13]); //validator only
-        boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
-        boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
-        boolean randomAmount = Boolean.parseBoolean(args[16]);
         String log = args[17];
         String transactionalId = args[18];
-
-
-        /*
-        String bootstrapServers = "127.0.0.1:9092";
-        String schemaRegistryUrl = "http://127.0.0.1:8081";
-        int maxPoll = 500;
-        long aggUTXOTime = 5000;
-        */
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log); //"off", "trace", "debug", "info", "warn", "error".
         InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl);
         InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId);
-        Logger logger = LoggerFactory.getLogger(sumUTXO.class);
         producer.initTransactions();
         long startTime = System.currentTimeMillis();
 
@@ -71,20 +46,20 @@ public class sumUTXO {
         while (true) {
             ConsumerRecords<String, Block> records = consumerFromUTXO.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, Block> record : records) {
-                //logger.info(record.value().toString());
                 //aggregate UTXO
                 sumTransactions(record.value());
-                //once any record comes, set the flag to false
-                empty = false;
+                empty = false; //once any record comes, set the flag to false
+
             }
+
             // send aggregated UTXO periodically
             if (System.currentTimeMillis() > startTime + aggUTXOTime && !empty) {
                 startTime = System.currentTimeMillis();
+
                 //Start atomically transactional write.
                 producer.beginTransaction();
                 try {
-                    //if the block is full (or time out), send it to "block" topic.
-                    sendAllBlock();
+                    sendAllBlock(); //if the block is full (or time out), send it to "block" topic.
                     empty = true;
                     producer.commitTransaction();
                 } catch (Exception e) {
@@ -148,7 +123,6 @@ public class sumUTXO {
         propsValidate.setProperty("specific.avro.reader", "true");
         consumerFromAccountInfo =
                 new KafkaConsumer<>(propsValidate);
-        //assign to topicPartition later
     }
 
     private static void InitProducer(String bootstrapServers, String schemaRegistryUrl, String transactionalId) {
@@ -193,7 +167,6 @@ public class sumUTXO {
             }
 
             Block output = Block.newBuilder().setTransactions(listOfUTXO).build();
-            //System.out.println(output);
 
             //producer send
             if (output.getTransactions().get(0).getAmount() != 0) {
@@ -245,9 +218,4 @@ public class sumUTXO {
         }
     }
 
-    public static String randomString() {
-        byte[] array = new byte[32]; // length is bounded by 32
-        new Random().nextBytes(array);
-        return new String(array, StandardCharsets.UTF_8);
-    }
 }

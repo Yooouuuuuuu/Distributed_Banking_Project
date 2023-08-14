@@ -9,10 +9,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.simple.SimpleLogger;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 
@@ -31,49 +28,24 @@ public class aggregator {
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
         int numOfPartitions = Integer.parseInt(args[2]);
-        int numOfAccounts = Integer.parseInt(args[3]);
-        short numOfReplicationFactor = Short.parseShort(args[4]);
-        long initBalance = Long.parseLong(args[5]);
         int maxPoll = Integer.parseInt(args[6]);
         int blockSize = Integer.parseInt(args[7]);
         long blockTimeout = Long.parseLong(args[8]); //aggregator only
-        long aggUTXOTime = Long.parseLong(args[9]); //sumUTXO only
-        long numOfData = Long.parseLong(args[10]); //sourceProducer only
-        long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
-        long UTXOUpdatePeriod = Long.parseLong(args[12]); //validator only
-        int UTXOUpdateBreakTime = Integer.parseInt(args[13]); //validator only
-        boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
-        boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
-        boolean randomAmount = Boolean.parseBoolean(args[16]);
         String log = args[17];
         String transactionalId = args[18];
-
-
-/*
-        String bootstrapServers = "127.0.0.1:9092";
-        String schemaRegistryUrl = "http://127.0.0.1:8081";
-        int numOfPartitions = 3;
-        int maxPoll = 500;
-        int blockSize = 500;
-        long blockTimeout = 10000;
-
- */
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log); //"off", "trace", "debug", "info", "warn", "error".
         InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl, numOfPartitions);
         InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId);
-        Logger logger = LoggerFactory.getLogger(aggregator.class);
         producer.initTransactions();
 
         //poll from "transactions" topic
         while (true) {
             ConsumerRecords<String, Block> records = consumerFromTransactions.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, Block> record : records) {
-                //logger.info(record.value().toString());
                 //aggregate transactions to blocks using list in Avro
                 aggToBlock(record.value(), record);
-                //System.out.println(listOfCounts);
                 if (listOfCounts.get(record.value().getTransactions().get(0).getOutbankPartition()) >= blockSize) {
                     producer.beginTransaction(); //Start atomically transactional write.
                     try {
@@ -148,6 +120,7 @@ public class aggregator {
         if (!bankTime.containsKey(recordValue.getTransactions().get(0).getOutbank())) {
             bankTime.put(recordValue.getTransactions().get(0).getOutbank(), System.currentTimeMillis());
             bankPartition.put(recordValue.getTransactions().get(0).getOutbankPartition(), recordValue.getTransactions().get(0).getOutbank());
+
         }
 
         //count +1
@@ -165,7 +138,8 @@ public class aggregator {
         Block currentBlock = Block.newBuilder()
                 .setTransactions(listOfListOfTransactions.get(recordValue.getTransactions().get(0).getOutbankPartition()))
                 .build() ;
-        producer.send(new ProducerRecord<String, Block>("blocks", record.partition(), (String) record.key(),currentBlock)); //maybe have to use recordValue.getTransactions().get(0).getOutbankPartition()
+
+        producer.send(new ProducerRecord<String, Block>("blocks", record.partition(), (String) record.key(),currentBlock));
 
         //reset timeout while send
         bankTime.put(recordValue.getTransactions().get(0).getOutbank(), System.currentTimeMillis());
@@ -178,6 +152,7 @@ public class aggregator {
         consumerFromTransactions.commitSync((Collections.singletonMap(
                 new TopicPartition(record.topic(), record.partition()),
                 new OffsetAndMetadata(record.offset() + 1, ""))));
+
     }
 
     public static void checkBlockTimeout(int numOfPartitions, long blockTimeout, String topic) {
@@ -186,7 +161,7 @@ public class aggregator {
                 //skip partition(s) not in charge of this consumer, do nothing
             } else {
                 if (System.currentTimeMillis() - bankTime.get(bankPartition.get(partition)) > blockTimeout) { //timeout
-                    //start transactional write
+                    //start kafka transactional write
                     producer.beginTransaction();
 
                     try {
@@ -222,11 +197,7 @@ public class aggregator {
             }
         }
     }
-    public static String randomString() {
-        byte[] array = new byte[32]; // length is bounded by 32
-        new Random().nextBytes(array);
-        return new String(array, StandardCharsets.UTF_8);
-    }
+
 }
 
 
