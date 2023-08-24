@@ -96,7 +96,7 @@ public class validatorDirectPollUTXO {
                     startTime = new HashMap<>();
                     lastOffsetOfUTXO = new HashMap<>();
                     start = false;
-                    System.out.println("Tx aborted. Reset hashmaps.");
+                    System.out.println("Tx aborted. Reset hashmaps. Exception: " + e.getMessage());
                 }
             }
             if (start) {
@@ -269,9 +269,9 @@ public class validatorDirectPollUTXO {
                             newBalance));
 
                     //send UTXO after every transaction
-                    Transaction UTXOdetail = recordValue.getTransactions().get(i);
+                    Transaction UTXODetail = recordValue.getTransactions().get(i);
                     List<Transaction> listOfUTXODetail = new ArrayList<Transaction>();
-                    listOfUTXODetail.add(UTXOdetail);
+                    listOfUTXODetail.add(UTXODetail);
                     Block UTXOBlock = Block.newBuilder()
                             .setTransactions(listOfUTXODetail)
                             .build();

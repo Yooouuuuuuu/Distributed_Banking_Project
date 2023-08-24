@@ -104,7 +104,7 @@ public class validatorAggUTXO {
                     startTime = new HashMap<>();
                     lastOffsetOfAggUTXO = new HashMap<>();
                     start = false;
-                    System.out.println("Tx aborted. Reset hashmaps.");
+                    System.out.println("Tx aborted. Reset hashmaps. Exception: " + e.getMessage());
                 }
             }
             if (start) {

@@ -97,7 +97,7 @@ public class validatorMultiThread {
                             } catch (Exception e) {
                                 //if kafka TX aborted, set the flag to end all threads.
                                 producer.abortTransaction();
-                                System.out.println(Thread.currentThread().getName() + "Tx aborted.");
+                                System.out.println(Thread.currentThread().getName() + "Tx aborted. Exception: " + e.getMessage());
                                 threadsStopFlag = true;
                             }
                         }
@@ -377,7 +377,6 @@ public class validatorMultiThread {
                         count.addAndGet(1);
                     });
 
-
                     System.out.println(Arrays.asList(partitions));
                     consumerFromUTXO.assign(Arrays.asList(partitions));
                     //assign success only if we wait for thread-0 to go first,
@@ -436,7 +435,7 @@ public class validatorMultiThread {
 
             } catch (Exception e) {
                 producer2.abortTransaction();
-                System.out.println(Thread.currentThread().getName() + "Tx aborted. (UTXO update failed)");
+                System.out.println(Thread.currentThread().getName() + "Tx aborted(UTXO update failed). Exception: " + e.getMessage());
                 threadsStopFlag = true;
             }
         }

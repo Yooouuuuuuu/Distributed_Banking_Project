@@ -98,7 +98,7 @@ public class validator {
                             } catch (Exception e) {
                                 //if kafka TX aborted, set the flag to end all threads.
                                 producer.abortTransaction();
-                                System.out.println(Thread.currentThread().getName() + "Tx aborted.");
+                                System.out.println(Thread.currentThread().getName() + "Tx aborted. Exception: " + e.getMessage());
                                 threadsStopFlag = true;
                                 lock.unlock();
                             }
@@ -437,7 +437,7 @@ public class validator {
 
             } catch (Exception e) {
                 producer2.abortTransaction();
-                System.out.println(Thread.currentThread().getName() + "Tx aborted. (UTXO update failed)");
+                System.out.println(Thread.currentThread().getName() + "Tx aborted(UTXO update failed). Exception: " + e.getMessage());
                 threadsStopFlag = true;
                 lock.unlock();
             }
