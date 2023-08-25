@@ -28,9 +28,6 @@ public class validatorBaselineAgg {
     static HashMap<Integer, String> partitionBank = new HashMap<Integer, String>();
     static long rejectedCount = 0;
     static long UTXOCount = 0;
-    static long pollCount = 0;
-    static long count2 = 0;
-
 
     public static void main(String[] args) throws Exception {
 
@@ -79,7 +76,6 @@ public class validatorBaselineAgg {
             }
 
             //variables for testing
-            //pollCount += 1;
             time2 = System.currentTimeMillis();
             interval = time1 - time2;
             time1 = System.currentTimeMillis();
@@ -88,8 +84,8 @@ public class validatorBaselineAgg {
                         "poll interval: " + interval);
                 //System.out.println("poll count: " + pollCount + " poll size: " + records.count());
                 System.out.println("numbers of UTXO consumed: " + UTXOCount);
-                System.out.println("records count: " + count2);
             }
+
         }
     }
 
@@ -175,9 +171,6 @@ public class validatorBaselineAgg {
     private static void ProcessBlocks(Block recordValue, boolean successfulMultiplePartition)
             throws ExecutionException, IOException, InterruptedException {
 
-
-
-
         //initialize block
         Block successfulBlock;
         List<Transaction> listOfSuccessful = new ArrayList<Transaction>();
@@ -187,8 +180,6 @@ public class validatorBaselineAgg {
 
         //validate transactions
         for (int i = 0; i < recordValue.getTransactions().size(); i++) {
-            count2 += 1;
-
             if (recordValue.getTransactions().get(i).getCategory() == 1) { //process UTXO
                 //check if bankBalance exist
                 if (!bankBalance.containsKey(recordValue.getTransactions().get(i).getInAccount())) {
@@ -197,9 +188,9 @@ public class validatorBaselineAgg {
                 }
 
                 //add money to inbank
-                long withdraw = recordValue.getTransactions().get(i).getAmount();
+                long UTXO = recordValue.getTransactions().get(i).getAmount();
                 bankBalance.compute(recordValue.getTransactions().get(i).getInAccount(), (key, value)
-                        -> value + withdraw);
+                        -> value + UTXO);
 
                 // update "localBalance" topic
                 LocalBalance newBalance =
@@ -209,6 +200,7 @@ public class validatorBaselineAgg {
                         recordValue.getTransactions().get(i).getInAccount(),
                         newBalance));
 
+                //just for testing, check if every UTXO is consumed.
                 UTXOCount += 1;
 
             } else if (recordValue.getTransactions().get(i).getCategory() == 0){ //process raw transaction
@@ -233,7 +225,6 @@ public class validatorBaselineAgg {
                             recordValue.getTransactions().get(i).getOutAccount(),
                             newBalance));
 
-
                     //send UTXO after every transaction
                     Transaction UTXODetail = recordValue.getTransactions().get(i);
                     UTXODetail.put("category", 1);
@@ -247,6 +238,9 @@ public class validatorBaselineAgg {
                             UTXOBlock.getTransactions().get(0).getInbank(),
                             UTXOBlock));
 
+                    //different to former validator, we build the successfulTx block manually instead of
+                    // deleting rejected from original block. If we go for the former approach, we have to
+                    // delete UTXO, too.
                     Transaction successfulTx = recordValue.getTransactions().get(i);
                     listOfSuccessful.add(successfulTx);
 

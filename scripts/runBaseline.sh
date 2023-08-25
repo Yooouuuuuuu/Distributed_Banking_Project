@@ -7,14 +7,14 @@ numOfPartitions=3
 numOfAccounts=10
 numOfReplicationFactor=1
 initBalance=100000000
-maxPoll=500
+maxPoll=2000
 blockSize=500
 
 blockTimeout=10000 #aggregator only
-numOfData=1000 #sourceProducer only
+numOfData=1000000 #sourceProducer only
 amountPerTransaction=1 #sourceProducer only
-
 #${i}aggregator ${i}validator ${i}sumUTXO  are transactional.ids
+zipfExponent=2
 
 #args used in script
 numOfaggregators=1
@@ -40,6 +40,7 @@ for i in $( eval echo {1..$numOfaggregators} )
   do gnome-terminal -- java -cp /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar aggregatorForBaseline $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger ${i}aggregator
 done
 
+#validatorBaseline or validatorBaselineAgg
 for i in $( eval echo {1..$numOfvalidators} )
   do gnome-terminal -- java -cp /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar validatorBaselineAgg $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger ${i}validator
 done
@@ -47,8 +48,9 @@ done
 echo "=== wait for rebalance === "
 sleep 5s
 
+#three source can use, sourceProducer, sourceProducerZipf, sourceProducerZipfRps
 echo "=== input data === "
-gnome-terminal -- java -cp /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar sourceProducer $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger
+gnome-terminal -- java -cp /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar sourceProducerZipf $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger $zipfExponent
 
 echo "=== wait for processes end === " 
 #sleep $waitTime

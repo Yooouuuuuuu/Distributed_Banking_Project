@@ -47,15 +47,14 @@ public class aggregatorForBaseline {
             ConsumerRecords<String, Block> records = consumerFromTransactions.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, Block> record : records) {
                 recordsCount += 1;
-
                 //aggregate transactions to blocks using list in Avro
                 aggToBlock(record.value(), record);
 
+                //if blocks is full (or time out), send them to "blocks" topic.
                 if (record.value().getTransactions().get(0).getCategory() == 1) {
                     if (listOfCounts.get(record.value().getTransactions().get(0).getInbankPartition()) >= blockSize) {
-                        producer.beginTransaction(); //Start atomically transactional write.
+                        producer.beginTransaction();
                         try {
-                            //if blocks is full (or time out), send them to "blocks" topic.
                             sendBlock(record.value(), record);
                             producer.commitTransaction();
                         } catch (Exception e) {
@@ -65,9 +64,8 @@ public class aggregatorForBaseline {
                     }
                 } else if (record.value().getTransactions().get(0).getCategory() == 0) {
                     if (listOfCounts.get(record.value().getTransactions().get(0).getOutbankPartition()) >= blockSize) {
-                        producer.beginTransaction(); //Start atomically transactional write.
+                        producer.beginTransaction();
                         try {
-                            //if blocks is full (or time out), send them to "blocks" topic.
                             sendBlock(record.value(), record);
                             producer.commitTransaction();
                         } catch (Exception e) {
@@ -76,7 +74,6 @@ public class aggregatorForBaseline {
                         }
                     }
                 }
-
             }
             //checked after every poll, if any concerned bank block timeout, send it to "blocks" topic.
             checkBlockTimeout(numOfPartitions, blockTimeout, "transactions");
@@ -142,12 +139,10 @@ public class aggregatorForBaseline {
                 bankTime.put(recordValue.getTransactions().get(0).getOutbank(), System.currentTimeMillis());
                 bankPartition.put(recordValue.getTransactions().get(0).getOutbankPartition(), recordValue.getTransactions().get(0).getOutbank());
             }
-
             //count +1
             listOfCounts.set(recordValue.getTransactions().get(0).getOutbankPartition(),
                     listOfCounts.get(recordValue.getTransactions().get(0).getOutbankPartition()) + 1);
             partitionOffset.put(record.partition(), record.offset());
-
             //add transaction to current block
             listOfListOfTransactions.get(recordValue.getTransactions().get(0).getOutbankPartition()).add(recordValue.getTransactions().get(0));
         }else if (recordValue.getTransactions().get(0).getCategory() == 1){
@@ -156,12 +151,10 @@ public class aggregatorForBaseline {
                 bankTime.put(recordValue.getTransactions().get(0).getInbank(), System.currentTimeMillis());
                 bankPartition.put(recordValue.getTransactions().get(0).getInbankPartition(), recordValue.getTransactions().get(0).getInbank());
             }
-
             //count +1
             listOfCounts.set(recordValue.getTransactions().get(0).getInbankPartition(),
                     listOfCounts.get(recordValue.getTransactions().get(0).getInbankPartition()) + 1);
             partitionOffset.put(record.partition(), record.offset());
-
             //add transaction to current block
             listOfListOfTransactions.get(recordValue.getTransactions().get(0).getInbankPartition()).add(recordValue.getTransactions().get(0));
         }
@@ -171,7 +164,7 @@ public class aggregatorForBaseline {
         //if the block is full (or time out), send it to "block" topic.
 
         //the partition differs between raw tx and UTXO
-        int partition = 0;
+        int partition = -1;
         if (recordValue.getTransactions().get(0).getCategory() == 0) {
             partition = recordValue.getTransactions().get(0).getOutbankPartition();
         } else if (recordValue.getTransactions().get(0).getCategory() == 1){
@@ -181,21 +174,37 @@ public class aggregatorForBaseline {
                 .setTransactions(listOfListOfTransactions.get(partition))
                 .build() ;
 
-        //send
-        producer.send(new ProducerRecord<String, Block>("blocks", record.partition(), (String) record.key(),currentBlock));
-
-        //reset timeout while send
-        bankTime.put(recordValue.getTransactions().get(0).getOutbank(), System.currentTimeMillis());
-
-        //initialize the block
-        listOfCounts.set(recordValue.getTransactions().get(0).getOutbankPartition(), 0);
-        listOfListOfTransactions.set(recordValue.getTransactions().get(0).getOutbankPartition(), new ArrayList<Transaction>());
-
-        //consumer group manually commit
-        consumerFromTransactions.commitSync((Collections.singletonMap(
-                new TopicPartition(record.topic(), record.partition()),
-                new OffsetAndMetadata(record.offset() + 1, ""))));
-
+        if (recordValue.getTransactions().get(0).getCategory() == 0) {
+            //send
+            producer.send(new ProducerRecord<String, Block>("blocks",
+                    record.partition(),
+                    (String) record.key(),
+                    currentBlock));
+            //reset timeout while send
+            bankTime.put(recordValue.getTransactions().get(0).getOutbank(), System.currentTimeMillis());
+            //initialize the block
+            listOfCounts.set(recordValue.getTransactions().get(0).getOutbankPartition(), 0);
+            listOfListOfTransactions.set(recordValue.getTransactions().get(0).getOutbankPartition(), new ArrayList<Transaction>());
+            //consumer group manually commit
+            consumerFromTransactions.commitSync((Collections.singletonMap(
+                    new TopicPartition(record.topic(), record.partition()),
+                    new OffsetAndMetadata(record.offset() + 1, ""))));
+        } else if (recordValue.getTransactions().get(0).getCategory() == 1) {
+            //send
+            producer.send(new ProducerRecord<String, Block>("blocks",
+                    recordValue.getTransactions().get(0).getInbankPartition(),
+                    recordValue.getTransactions().get(0).getInbank(),
+                    currentBlock));
+            //reset timeout while send
+            bankTime.put(recordValue.getTransactions().get(0).getInbank(), System.currentTimeMillis());
+            //initialize the block
+            listOfCounts.set(recordValue.getTransactions().get(0).getInbankPartition(), 0);
+            listOfListOfTransactions.set(recordValue.getTransactions().get(0).getInbankPartition(), new ArrayList<Transaction>());
+            //consumer group manually commit
+            consumerFromTransactions.commitSync((Collections.singletonMap(
+                    new TopicPartition(record.topic(), record.partition()),
+                    new OffsetAndMetadata(record.offset() + 1, ""))));
+        }
     }
 
     public static void checkBlockTimeout(int numOfPartitions, long blockTimeout, String topic) {

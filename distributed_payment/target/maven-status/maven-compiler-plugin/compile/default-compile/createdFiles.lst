@@ -24,7 +24,6 @@ my/avroSchema/Transaction$Builder.class
 validatorMultiThread$2.class
 validator$1.class
 my/avroSchema/Block.class
-test/rateLimiter.class
 my/avroSchema/LocalBalance$Builder.class
 aggregator.class
 my/avroSchema/Transaction$1.class
@@ -38,7 +37,6 @@ my/avroSchema/AccountInfo$Builder.class
 my/avroSchema/LocalBalance.class
 my/avroSchema/LocalBalance$1.class
 my/avroSchema/Block$1.class
-test/zipfDistribution.class
 my/avroSchema/Account$1.class
 validatorAggUTXO$1.class
 validatorMultiThreadNoConcurrentHashMap$2.class

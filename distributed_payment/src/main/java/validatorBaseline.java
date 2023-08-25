@@ -211,7 +211,7 @@ public class validatorBaseline {
                 LocalBalance newBalance =
                         new LocalBalance(bankBalance.get(recordValue.getTransactions().get(i).getOutAccount()));
                 producer.send(new ProducerRecord<String, LocalBalance>("localBalance",
-                        recordValue.getTransactions().get(0).getOutbankPartition(),
+                        recordValue.getTransactions().get(i).getOutbankPartition(),
                         recordValue.getTransactions().get(i).getOutAccount(),
                         newBalance));
 
@@ -219,16 +219,11 @@ public class validatorBaseline {
                 //send UTXO after every transaction
                 Transaction UTXODetail = recordValue.getTransactions().get(i);
                 UTXODetail.put("category", 1);
-                //System.out.println(UTXODetail);
-
-                //send UTXO after every transaction
                 List<Transaction> listOfUTXODetail = new ArrayList<Transaction>();
                 listOfUTXODetail.add(UTXODetail);
                 Block UTXOBlock = Block.newBuilder()
                         .setTransactions(listOfUTXODetail)
                         .build();
-
-
                 producer.send(new ProducerRecord<String, Block>("blocks",
                         UTXOBlock.getTransactions().get(0).getInbankPartition(),
                         UTXOBlock.getTransactions().get(0).getInbank(),
