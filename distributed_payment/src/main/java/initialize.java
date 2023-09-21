@@ -37,7 +37,17 @@ public class initialize {
         AdminClient adminClient = KafkaAdminClient.create(adminProps);
 
         // delete topics
-        adminClient.deleteTopics(Arrays.asList("transactions", "blocks", "successful", "rejected", "localBalance", "UTXO", "aggUTXO", "aggUTXOOffset", "accountInfo", "UTXOOffset"));
+        adminClient.deleteTopics(Arrays.asList(
+                "transactions",
+                "blocks",
+                "order",
+                "successful",
+                "localBalance",
+                "UTXO",
+                "aggUTXO",
+                "aggUTXOOffset",
+                "accountInfo",
+                "UTXOOffset"));
 
         // create topics
         String topic_name1 = "blocks";
@@ -53,18 +63,13 @@ public class initialize {
         NewTopic topic_02 = new NewTopic(topic_name2, numOfPartitions, numOfReplicationFactor);
         topic_02.configs(configs); //spacial configs for specific topic
 
-        String topic_name3 = "successful";
+        String topic_name3 = "order";
         NewTopic topic_03;
-        String topic_name4 = "rejected";
-        NewTopic topic_04;
-
 
         if (successfulMultiplePartition) {
             topic_03 = new NewTopic(topic_name3, numOfPartitions, numOfReplicationFactor);
-            topic_04 = new NewTopic(topic_name4, numOfPartitions, numOfReplicationFactor);
         } else {
             topic_03 = new NewTopic(topic_name3, 1, numOfReplicationFactor); //for serialization
-            topic_04 = new NewTopic(topic_name4, 1, numOfReplicationFactor);
         }
 
         String topic_name5 = "transactions";
@@ -78,7 +83,7 @@ public class initialize {
 
         if (UTXODoNotAgg) {
             Thread.sleep(10000); //wait 10 sec in case that the topic deletion is late
-            CreateTopicsResult result = adminClient.createTopics(Arrays.asList(topic_01, topic_02, topic_03, topic_04, topic_05, topic_06, topic_07));
+            CreateTopicsResult result = adminClient.createTopics(Arrays.asList(topic_01, topic_02, topic_03, topic_05, topic_06, topic_07));
 
             // check if topic created successfully
             for(Map.Entry entry : result.values().entrySet()) {
@@ -108,7 +113,7 @@ public class initialize {
             NewTopic topic_09 = new NewTopic(topic_name9, numOfPartitions, numOfReplicationFactor);
 
             Thread.sleep(10000); //wait 10 sec in case that the topic deletion is late
-            CreateTopicsResult result = adminClient.createTopics(Arrays.asList(topic_01, topic_02, topic_03, topic_04, topic_05, topic_06, topic_07, topic_08, topic_09));
+            CreateTopicsResult result = adminClient.createTopics(Arrays.asList(topic_01, topic_02, topic_03, topic_05, topic_06, topic_07, topic_08, topic_09));
 
             // check if topic created successfully
             for (Map.Entry entry : result.values().entrySet()) {

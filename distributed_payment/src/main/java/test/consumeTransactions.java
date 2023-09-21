@@ -9,6 +9,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.simple.SimpleLogger;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
@@ -21,6 +22,7 @@ public class consumeTransactions {
         //inputs
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
+        String outputTxt = args[2];
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off");//"off", "trace", "debug", "info", "warn", "error"
 
         /*
@@ -69,8 +71,18 @@ public class consumeTransactions {
                 break;
             }
         }
-        System.out.println("For transactions topic:\nfirst record end at: " + firstRecordTime + "\nlast record end at: " + lastRecordTime);
-        System.in.read();
+
+        PrintWriter writer = new PrintWriter(outputTxt);
+
+        writer.println("first timestamp of transactions topic");
+        writer.println(firstRecordTime);
+
+        writer.flush();
+        writer.close();
+
+        //System.out.println("For transactions topic:\nfirst record end at: " + firstRecordTime + "\nlast record end at: " + lastRecordTime);
+        //System.in.read();
+
     }
 }
 

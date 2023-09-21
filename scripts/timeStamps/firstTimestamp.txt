@@ -1,0 +1,2 @@
+first timestamp of transactions topic
+1695314041028

@@ -1,21 +1,18 @@
+import com.google.common.util.concurrent.RateLimiter;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import my.avroSchema.Block;
 import my.avroSchema.Transaction;
+import org.apache.commons.math3.distribution.ZipfDistribution;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.simple.SimpleLogger;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.ThreadLocalRandom;
+import java.io.PrintWriter;
+import java.util.*;
 
 public class sourceProducer {
-    static String outAccount;
-    static String inAccount;
     static long rejectedCount = 0;
 
     public static void main(String[] args) throws IOException {
@@ -26,34 +23,14 @@ public class sourceProducer {
         int numOfPartitions = Integer.parseInt(args[2]);
         int numOfAccounts = Integer.parseInt(args[3]);
         long initBalance = Long.parseLong(args[5]);
-        long numOfData = Long.parseLong(args[10]); //sourceProducer only
         long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
-        boolean randomAmount = Boolean.parseBoolean(args[16]);
+        float zipfExponent = Float.parseFloat(args[18]);
+        float tokensPerSec = Float.parseFloat(args[19]);
+        long executionTime = Long.parseLong(args[20]);
+        String outputTxt = args[21];
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off"); //"off", "trace", "debug", "info", "warn", "error".
-
-        //create banks (100, 101, 102 etc) & accounts
-        ArrayList<String> bank = new ArrayList<String>();
-        HashMap<String, Long> bankBalance = new HashMap<String, Long>();
-        int banks = 0;
-        String account;
-        while(banks < numOfPartitions){
-            bank.add("10" + banks);
-            for (int accountNum = 1; accountNum <= numOfAccounts; accountNum++) {
-                if (accountNum < 10) {
-                    account =  "10" + banks + "000" + accountNum;
-                }else if (accountNum < 100){
-                    account =  "10" + banks + "00" + accountNum;
-                }else if (accountNum < 1000){
-                    account =  "10" + banks + "0" + accountNum;
-                }else {
-                    account = "10" + banks + accountNum;
-                }
-                bankBalance.put(account, initBalance);
-            }
-            banks += 1;
-        }
 
         //create producer
         Properties properties = new Properties();
@@ -65,56 +42,99 @@ public class sourceProducer {
         properties.setProperty("schema.registry.url", schemaRegistryUrl);
         KafkaProducer<String, Block> producer = new KafkaProducer<String, Block>(properties);
 
+        //create banks (100, 101, 102 etc) & accounts
+        ArrayList<String> bankList = new ArrayList<String>();
+        HashMap<String, Long> bankBalance = new HashMap<String, Long>();
+        List<String> allAccounts = new ArrayList<String>();
+        int banks = 0;
+        String account;
+        while(banks < numOfPartitions){
+            bankList.add("10" + banks); //100, 101, 102, etc...
+            for (int accountNum = 1; accountNum <= numOfAccounts; accountNum++) {
+                if (accountNum < 10) {
+                    account =  "10" + banks + "000" + accountNum; //1000001
+                }else if (accountNum < 100){
+                    account =  "10" + banks + "00" + accountNum; //1000010
+                }else if (accountNum < 1000){
+                    account =  "10" + banks + "0" + accountNum; //1000100
+                }else {
+                    account = "10" + banks + accountNum; //1001000
+                }
+                bankBalance.put(account, initBalance);
+                allAccounts.add(account);
+            }
+            banks += 1;
+        }
+        Collections.shuffle(allAccounts);
+        System.out.println(allAccounts);
+        String[] accountList = allAccounts.toArray(new String[0]);
+
+        //setups
+        ZipfDistribution zipfDistribution = new ZipfDistribution(accountList.length - 1, zipfExponent);
+        RateLimiter limiter = RateLimiter.create(tokensPerSec); //rps
+        long start = System.currentTimeMillis();
+        long lastFlushTime = System.currentTimeMillis();
+        boolean keepSending = true;
+        long serialNumber = 1;
+
         //sending random data
-        for (long i = 1L; i <= numOfData; i++) {
-            //random inBank and outBank
-            int outBankNum = ThreadLocalRandom.current().nextInt(0, numOfPartitions);
-            int inBankNum = ThreadLocalRandom.current().nextInt(0, numOfPartitions);
-            int outAccountNum = ThreadLocalRandom.current().nextInt(1, numOfAccounts+1);
-            int inAccountNum = ThreadLocalRandom.current().nextInt(1, numOfAccounts+1);
+        while (keepSending) {
+            limiter.acquire(); //acquire a token for permission, if no token left, block it.
 
-            if (outAccountNum < 10) {
-                outAccount =  bank.get(outBankNum) + "000" + outAccountNum;
-            }else if (outAccountNum < 100){
-                outAccount =  bank.get(outBankNum) + "00" + outAccountNum;
-            }else if (outAccountNum < 1000){
-                outAccount =  bank.get(outBankNum) + "0" + outAccountNum;
-            }else {
-                outAccount = bank.get(outBankNum) + outAccountNum;
-            }
-            if (inAccountNum < 10) {
-                inAccount =  bank.get(inBankNum) + "000" + inAccountNum;
-            }else if (inAccountNum < 100){
-                inAccount =  bank.get(inBankNum) + "00" + inAccountNum;
-            }else if (inAccountNum < 1000){
-                inAccount =  bank.get(inBankNum) + "0" + inAccountNum;
-            }else {
-                inAccount = bank.get(inBankNum) + inAccountNum;
+            //generate and send data
+            int out = zipfDistribution.sample();
+            String outAccount = accountList[out];
+            String outBank = outAccount.substring(0, 3);
+            int in = zipfDistribution.sample();
+            String inAccount = accountList[in];
+            String inBank = inAccount.substring(0, 3);
+
+            //reselect if in and out are same account
+            while (inAccount.equals(outAccount)) {
+                in = zipfDistribution.sample();
+                inAccount = accountList[in];
+                inBank = inAccount.substring(0, 3);
             }
 
+            /*
             if (randomAmount) {
                 amountPerTransaction = ThreadLocalRandom.current().nextInt(1000, 10000);
-            }
+            } //else use the value args give
+             */
 
-            //build block
-            Transaction detail = new Transaction(i,
-                    bank.get(outBankNum), outAccount,
-                    bank.get(inBankNum), inAccount,
-                    outBankNum, inBankNum, amountPerTransaction, 0);
+            Transaction detail = new Transaction(serialNumber,
+                    outBank, outAccount,
+                    inBank, inAccount,
+                    bankList.indexOf(outBank), bankList.indexOf(inBank), amountPerTransaction, 0);
             List<Transaction> listOfDetail = new ArrayList<Transaction>();
             listOfDetail.add(detail);
-
             Block output = Block.newBuilder()
                     .setTransactions(listOfDetail)
                     .build();
+            producer.send(new ProducerRecord<String, Block>("transactions",
+                    bankList.indexOf(outBank),
+                    outBank,
+                    output));
 
-            //send
-            producer.send(new ProducerRecord<String, Block>("transactions", outBankNum, bank.get(outBankNum), output));
+            serialNumber += 1;
+
+            //calculate local result for verification
             if (bankBalance.get(outAccount) - amountPerTransaction >= 0) {
                 bankBalance.compute(outAccount, (key, value) -> value - detail.getAmount());
                 bankBalance.compute(inAccount, (key, value) -> value + detail.getAmount());
             } else {
                 rejectedCount += 1;
+            }
+
+            //periodically flush data to Kafka
+            if (System.currentTimeMillis() - lastFlushTime >= 1000) {
+                producer.flush();
+                lastFlushTime = System.currentTimeMillis();
+            }
+
+            //end loop
+            if (System.currentTimeMillis() - start >= executionTime) {
+                keepSending = false;
             }
         }
 
@@ -122,12 +142,34 @@ public class sourceProducer {
         producer.flush();
         producer.close();
 
+        //check rps
+        long end = System.currentTimeMillis();
+        long spendTime = end - start;
+        System.out.println("execution time: " + spendTime + " (" + executionTime + ") ms");
+
+        float RPS = (float) (1000 * (serialNumber-1)) /spendTime;
+        System.out.println("numbers of payments sent: " + (serialNumber-1) + ". RPS = " + RPS);
+
         //print result
         System.out.println("bank balance: " + bankBalance);
         System.out.println("rejected count: " + rejectedCount);
         //This bankBalance is for reference only,
         //if any transaction has been rejected, here shows the linearization result,
         //however our system is not even serialization.
+
+        //write important data as txt
+        PrintWriter writer = new PrintWriter(outputTxt);
+
+        writer.println("numbers of payments");
+        writer.println(serialNumber-1);
+        writer.println("source producer execution time");
+        writer.println(spendTime);
+        writer.println("RPS");
+        writer.println(RPS);
+
+        writer.flush();
+        writer.close();
+
 
         System.in.read();
 

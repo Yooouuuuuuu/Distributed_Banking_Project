@@ -43,7 +43,7 @@ public class validatorBaselineAgg {
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log);//"off", "trace", "debug", "info", "warn", "error"
         InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl);
         InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId);
-        //Logger logger = LoggerFactory.getLogger(validatorDirectPollUTXO.class);
+        //Logger logger = LoggerFactory.getLogger(oldValidators.validatorDirectPollUTXO.class);
         producer.initTransactions();
 
         //variables for testing
