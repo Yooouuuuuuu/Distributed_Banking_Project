@@ -81,7 +81,6 @@ sleep 30s
 
 java -cp /home/yooouuuuuuu/git-repos/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/sortTimestamps "/home/yooouuuuuuu/git-repos/Distributed_Banking_Project/scripts/timeStamps/OriginalData.txt" "/home/yooouuuuuuu/git-repos/Distributed_Banking_Project/scripts/timeStamps/UTXO.txt" "/home/yooouuuuuuu/git-repos/Distributed_Banking_Project/scripts/timeStamps/RPS.txt" "/home/yooouuuuuuu/git-repos/Distributed_Banking_Project/scripts/timeStamps/firstTimestamp.txt" "/home/yooouuuuuuu/git-repos/Distributed_Banking_Project/scripts/timeStamps/orders.csv"
 
-echo ""
 echo -e "\nEnd. "
 
 
