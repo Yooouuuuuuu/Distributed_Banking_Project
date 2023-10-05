@@ -59,6 +59,8 @@ echo "consume transactions -- OriginalData & UTXO"
 #100000 is the roughly number of data, use to decide how long we should wait until polling finish. no need to be the exact number of data.
 java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/writeTimestampsToTxt "127.0.0.1:9092" "http://127.0.0.1:8081" 100000 "off" "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/OriginalData.txt" "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/UTXO.txt"
 
+sleep 30s
+
 echo "record and sort order timestamps" 
 java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/sortTimestamps "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/OriginalData.txt" "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/UTXO.txt" "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/RPS.txt" "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/firstTimestamp.txt" "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/orders.csv"
 
