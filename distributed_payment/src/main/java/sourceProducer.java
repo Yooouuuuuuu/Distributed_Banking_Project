@@ -171,7 +171,7 @@ public class sourceProducer {
         writer.close();
 
 
-        System.in.read();
+        //System.in.read();
 
     }
 }

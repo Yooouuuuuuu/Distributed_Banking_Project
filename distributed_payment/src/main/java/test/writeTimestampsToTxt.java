@@ -113,7 +113,7 @@ public class writeTimestampsToTxt {
 
         writer.flush();
         writer.close();
-        //System.out.println(filename + " is written complete.");
+        System.out.println(filename + " is written complete.");
     }
 
     private static void consumerUTXO(String filename, int numOfTX) throws FileNotFoundException {
@@ -143,7 +143,7 @@ public class writeTimestampsToTxt {
         }
         writer.flush();
         writer.close();
-        //System.out.println(filename + " is written complete.");
+        System.out.println(filename + " is written complete.");
     }
 
 }

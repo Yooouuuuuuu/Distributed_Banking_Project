@@ -6,11 +6,9 @@ machine=1
 
 if [ $machine -eq 1 ] 
 then
-    echo machine 1
     bootstrapServers="192.168.50.213:9092"
     schemaRegistryUrl="http://192.168.50.213:8081"
 else
-    echo machine 2
     bootstrapServers="192.168.50.224:9092"
     schemaRegistryUrl="http://192.168.50.224:8081"
 fi
@@ -26,7 +24,7 @@ blockTimeout=10000 #aggregator only
 numOfData=1000000 #sourceProducer only
 amountPerTransaction=1 #sourceProducer only
 #${i}aggregator ${i}validator are transactional.ids
-zipfExponent=0
+zipfExponent=1
 
 tokensPerSec=10000;
 executionTime=10000;
@@ -45,7 +43,7 @@ UTXOUpdatePeriod=100000000 #validator only
 UTXOUpdateBreakTime=1000 #validator only
 UTXODirectAdd="true"
 
-echo "=== Initialize kafka topics === "
+echo "initialize kafka topics"
 java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar initialize $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger
 
 echo -e "\nEnd. "
