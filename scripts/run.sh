@@ -60,9 +60,9 @@ echo "=== input data and wait for processes end === "
 gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar sourceProducer $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger $zipfExponent $tokensPerSec $executionTime "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/RPS.txt"
 
 #wait until finish
-sleep 30s
-#read -n 1 -s -r -p "Press any key to continue"
+#sleep 30s
+read -n 1 -s -r -p "Press any key to end"
 #pkill -f 'distributed-payment-v1-1.0-SNAPSHOT.jar'
-#echo -e "\nEnd. "
+echo -e "\nEnd. "
 
 
