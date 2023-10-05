@@ -4,7 +4,7 @@
 
 machine=1
 
-if [ machine==1 ] 
+if [ $machine -eq 1 ] 
 then
     echo machine 1
     bootstrapServers="192.168.50.213:9092"

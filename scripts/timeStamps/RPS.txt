@@ -1,6 +1,0 @@
-numbers of payments
-99999
-source producer execution time
-10012
-RPS
-9987.914

@@ -1,2 +1,0 @@
-first timestamp of transactions topic
-1695349547244
