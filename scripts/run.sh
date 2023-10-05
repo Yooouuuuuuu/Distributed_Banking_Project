@@ -51,14 +51,6 @@ gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Proj
 #three validators can use, validator, validatorMultiThread, validatorMultiThreadNoConcurrentHashMap
 gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar validator $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger ${machine}validator $UTXODirectAdd
 
-
-#wait for kafka consumer to rebalance
-sleep 5s
-
-#three source can use, sourceProducer, sourceProducerZipf, sourceProducerZipfRps
-echo "=== input data and wait for processes end === "
-gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar sourceProducer $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger $zipfExponent $tokensPerSec $executionTime "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/RPS.txt"
-
 #wait until finish
 #sleep 30s
 read -n 1 -s -r -p "Press any key to end"
