@@ -80,6 +80,8 @@ public class consumeTransactions {
         writer.flush();
         writer.close();
 
+        System.out.println(outputTxt + " is written complete.");
+
         //System.out.println("For transactions topic:\nfirst record end at: " + firstRecordTime + "\nlast record end at: " + lastRecordTime);
         //System.in.read();
 
