@@ -23,12 +23,14 @@ public class writeTimestampsToTxt {
 
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
-        int numOfTX = Integer.parseInt(args[2]);
-        String log = args[3];
-        String outputTxt1 = args[4];
-        String outputTxt2 = args[5];
-        String outputTxt3 = args[6];
+        long tokensPerSec = Long.parseLong(args[2]);
+        long executionTime = Long.parseLong(args[3]);
+        String log = args[4];
+        String outputTxt1 = args[5];
+        String outputTxt2 = args[6];
+        String outputTxt3 = args[7];
 
+        long numOfTX = 2*tokensPerSec*(executionTime/1000);
 
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log);//"off", "trace", "debug", "info", "warn", "error"
         Properties props = new Properties();
@@ -111,7 +113,7 @@ public class writeTimestampsToTxt {
 
     }
 
-    private static void consumeOriginal(String filename, int numOfTX) throws FileNotFoundException {
+    private static void consumeOriginal(String filename, long numOfTX) throws FileNotFoundException {
 
         long newNumber;
         String type;
@@ -120,7 +122,7 @@ public class writeTimestampsToTxt {
         long startTime = System.currentTimeMillis();
 
 
-        while (startTime + (numOfTX / 10) > System.currentTimeMillis()) { //might have to set bigger if input increase
+        while (startTime + (numOfTX / 100) > System.currentTimeMillis()) { //might have to set bigger if input increase
             ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, Block> record : records) {
                 for (int i = 0; i < record.value().getTransactions().size(); i++) {
@@ -164,7 +166,7 @@ public class writeTimestampsToTxt {
         System.out.println(filename + " is written complete.");
     }
 
-    private static void consumerUTXO(String filename, int numOfTX) throws FileNotFoundException {
+    private static void consumerUTXO(String filename, long numOfTX) throws FileNotFoundException {
         long newNumber;
         String type;
         PrintWriter writer = new PrintWriter(filename);

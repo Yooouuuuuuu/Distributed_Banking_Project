@@ -28,7 +28,6 @@ zipfExponent=1
 
 tokensPerSec=50000;
 executionTime=10000;
-numOfTx=2*$tokensPerSec*$executionTime/1000
 
 #args used in script
 numOfaggregators=1
@@ -65,7 +64,7 @@ java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_pa
 
 echo "consume transactions -- write firstTimestamp, OriginalData & UTXO to txt files" 
 #100000 is the roughly number of data, use to decide how long we should wait until polling finish. no need to be the exact number of data.
-java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/writeTimestampsToTxt $bootstrapServers $schemaRegistryUrl $numOfTx "off" $outputTxt1 $outputTxt2 $outputTxt3
+java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/writeTimestampsToTxt $bootstrapServers $schemaRegistryUrl $tokensPerSec $executionTime "off" $outputTxt1 $outputTxt2 $outputTxt3
 
 sleep 30s
 
