@@ -85,16 +85,11 @@ public class sourceProducer {
             //generate and send data
             int out = zipfDistribution.sample();
             String outAccount = accountList[out];
-            //String outBank = outAccount.substring(0, 3);
-            String outBank = machine;
+            String outBank = outAccount.substring(0, 3);
 
             int in = zipfDistribution.sample();
             String inAccount = accountList[in];
-            //String inBank = inAccount.substring(0, 3);
-            String inBank = String.valueOf(1);
-            if (machine == String.valueOf(1)) {
-                inBank = String.valueOf(2);
-            }
+            String inBank = inAccount.substring(0, 3);
 
             /*
             //reselect if in and out are same account
@@ -167,7 +162,7 @@ public class sourceProducer {
         }
 
         //print result
-        System.out.println("bank balance: " + bankBalance);
+        //System.out.println("bank balance: " + bankBalance);
         System.out.println("rejected count: " + rejectedCount);
         //This bankBalance is for reference only,
         //if any transaction has been rejected, here shows the linearization result,
