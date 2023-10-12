@@ -26,7 +26,7 @@ amountPerTransaction=1 #sourceProducer only
 #${i}aggregator ${i}validator are transactional.ids
 zipfExponent=1
 
-tokensPerSec=10000;
+tokensPerSec=50000;
 executionTime=10000;
 
 #args used in script
@@ -45,7 +45,7 @@ UTXODirectAdd="true"
 
 #three source can use, sourceProducer, sourceProducerZipf, sourceProducerZipfRps
 echo "machine$machine input data and wait for processes end"
-java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar sourceProducer $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger $zipfExponent $tokensPerSec $executionTime "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/RPS.txt"
+java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar sourceProducer $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger $zipfExponent $tokensPerSec $executionTime "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/RPS.txt" $machine
 
 echo -e "\nEnd. "
 

@@ -26,7 +26,7 @@ amountPerTransaction=1 #sourceProducer only
 #${i}aggregator ${i}validator are transactional.ids
 zipfExponent=1
 
-tokensPerSec=10000;
+tokensPerSec=50000;
 executionTime=10000;
 numOfTx=2*$tokensPerSec*$executionTime/1000
 
