@@ -28,6 +28,7 @@ public class sourceProducer {
         float tokensPerSec = Float.parseFloat(args[19]);
         long executionTime = Long.parseLong(args[20]);
         String outputTxt = args[21];
+        String machine = args[22];
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off"); //"off", "trace", "debug", "info", "warn", "error".
@@ -66,7 +67,7 @@ public class sourceProducer {
             banks += 1;
         }
         Collections.shuffle(allAccounts);
-        System.out.println(allAccounts);
+        //System.out.println(allAccounts);
         String[] accountList = allAccounts.toArray(new String[0]);
 
         //setups
@@ -75,7 +76,7 @@ public class sourceProducer {
         long start = System.currentTimeMillis();
         long lastFlushTime = System.currentTimeMillis();
         boolean keepSending = true;
-        long serialNumber = 1;
+        long serialNumber = Long.parseLong(machine);
 
         //sending random data
         while (keepSending) {
@@ -84,17 +85,26 @@ public class sourceProducer {
             //generate and send data
             int out = zipfDistribution.sample();
             String outAccount = accountList[out];
-            String outBank = outAccount.substring(0, 3);
+            //String outBank = outAccount.substring(0, 3);
+            String outBank = machine;
+
             int in = zipfDistribution.sample();
             String inAccount = accountList[in];
-            String inBank = inAccount.substring(0, 3);
+            //String inBank = inAccount.substring(0, 3);
+            String inBank = String.valueOf(1);
+            if (machine == String.valueOf(1)) {
+                inBank = String.valueOf(2);
+            }
 
+            /*
             //reselect if in and out are same account
             while (inAccount.equals(outAccount)) {
                 in = zipfDistribution.sample();
                 inAccount = accountList[in];
                 inBank = inAccount.substring(0, 3);
             }
+
+             */
 
             /*
             if (randomAmount) {
@@ -116,7 +126,7 @@ public class sourceProducer {
                     outBank,
                     output));
 
-            serialNumber += 1;
+            serialNumber += 2;
 
             //calculate local result for verification
             if (bankBalance.get(outAccount) - amountPerTransaction >= 0) {
@@ -145,10 +155,16 @@ public class sourceProducer {
         //check rps
         long end = System.currentTimeMillis();
         long spendTime = end - start;
+        float RPS;
         System.out.println("execution time: " + spendTime + " (" + executionTime + ") ms");
 
-        float RPS = (float) (1000 * (serialNumber-1)) /spendTime;
-        System.out.println("numbers of payments sent: " + (serialNumber-1) + ". RPS = " + RPS);
+        if (machine == String.valueOf(1)) {
+            RPS = (float) (1000 * ((serialNumber - 1)/2+1)) / spendTime;
+            System.out.println("numbers of payments sent: " + ((serialNumber - 1)/2+1) + ". RPS = " + RPS);
+        } else {
+            RPS = (float) (1000 * ((serialNumber - 1)/2)) / spendTime;
+            System.out.println("numbers of payments sent: " + ((serialNumber - 1)/2) + ". RPS = " + RPS);
+        }
 
         //print result
         System.out.println("bank balance: " + bankBalance);
@@ -169,7 +185,6 @@ public class sourceProducer {
 
         writer.flush();
         writer.close();
-
 
         //System.in.read();
 

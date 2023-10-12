@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.*;
 
 public class writeTimestampsToTxt {
-    static KafkaConsumer<String, Block> consumerFromOrder;
+    static KafkaConsumer<String, Block> consumer;
     static HashMap<String, Long> newNumberMap = new HashMap<>();
 
 
@@ -27,6 +27,7 @@ public class writeTimestampsToTxt {
         String log = args[3];
         String outputTxt1 = args[4];
         String outputTxt2 = args[5];
+        String outputTxt3 = args[6];
 
 
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log);//"off", "trace", "debug", "info", "warn", "error"
@@ -39,27 +40,74 @@ public class writeTimestampsToTxt {
         props.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
         props.setProperty("schema.registry.url", schemaRegistryUrl);
         props.setProperty("specific.avro.reader", "true");
-        String inputTopic = "order";
 
-        consumerFromOrder =
+        //transaction topic, find the timestamp of the first data
+        String inputTopic = "transactions";
+        consumer =
                 new KafkaConsumer<String, Block>(props);
-        consumerFromOrder.subscribe(Collections.singletonList(inputTopic));
+        consumer.subscribe(Collections.singleton(inputTopic));
+        findFirstTimestamp(outputTxt1);
+        consumer.close();
 
-        consumeOriginal(outputTxt1, numOfTX);
-        consumerFromOrder.close();
+        //order topic, record the timestamps of original and UTXO separately
+        inputTopic = "order";
+        consumer =
+                new KafkaConsumer<String, Block>(props);
+        consumer.subscribe(Collections.singletonList(inputTopic));
+
+        consumeOriginal(outputTxt2, numOfTX);
+        consumer.close();
 
 
-        consumerFromOrder =
+        consumer =
                 new KafkaConsumer<>(props);
-        consumerFromOrder.subscribe(Collections.singletonList(inputTopic));
-        consumerFromOrder.poll(0);  // without this, the assignment will be empty.
-        consumerFromOrder.assignment().forEach(t -> {
+        consumer.subscribe(Collections.singletonList(inputTopic));
+        consumer.poll(0);  // without this, the assignment will be empty.
+        consumer.assignment().forEach(t -> {
             //System.out.printf("Set %s to offset 0%n", t.toString());
-            consumerFromOrder.seek(t, 0);
+            consumer.seek(t, 0);
         });
 
-        consumerUTXO(outputTxt2, numOfTX);
-        consumerFromOrder.close();
+        consumerUTXO(outputTxt3, numOfTX);
+        consumer.close();
+
+
+
+
+    }
+    private static void findFirstTimestamp(String filename) throws FileNotFoundException {
+        long timeout = System.currentTimeMillis() + 10000;
+        long firstRecordTime = 9999999999999L;
+
+        while (true) {
+            ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
+            for (ConsumerRecord<String, Block> record : records) {
+                for (int i = 0; i < record.value().getTransactions().size(); i++) {
+                    if (record.value().getTransactions().get(i).getSerialNumber() == 1) {
+                        //there might have more than one data which SerialNumber() == 1
+                        // if there are more than one generator
+                        if (firstRecordTime > record.timestamp()) {
+                            firstRecordTime = record.timestamp();
+                        }
+                    }
+                    //System.out.println(record.value().getTransactions().get(i));
+                    timeout = System.currentTimeMillis();
+                }
+            }
+            if (System.currentTimeMillis() > timeout) {
+                break;
+            }
+        }
+
+        PrintWriter writer = new PrintWriter(filename);
+
+        writer.println("first timestamp of transactions topic");
+        writer.println(firstRecordTime);
+
+        writer.flush();
+        writer.close();
+
+        System.out.println(filename + " is written complete.");
 
     }
 
@@ -73,7 +121,7 @@ public class writeTimestampsToTxt {
 
 
         while (startTime + (numOfTX / 10) > System.currentTimeMillis()) { //might have to set bigger if input increase
-            ConsumerRecords<String, Block> records = consumerFromOrder.poll(Duration.ofMillis(100));
+            ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, Block> record : records) {
                 for (int i = 0; i < record.value().getTransactions().size(); i++) {
                     if (record.value().getTransactions().get(i).getSerialNumber() != 0L) {
@@ -122,8 +170,8 @@ public class writeTimestampsToTxt {
         PrintWriter writer = new PrintWriter(filename);
         long startTime = System.currentTimeMillis();
 
-        while (startTime + (numOfTX / 10) > System.currentTimeMillis()) { //might have to set bigger if input increase
-            ConsumerRecords<String, Block> records = consumerFromOrder.poll(Duration.ofMillis(100));
+        while (startTime + (numOfTX / 100) > System.currentTimeMillis()) { //might have to set bigger if input increase
+            ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, Block> record : records) {
                 for (int i = 0; i < record.value().getTransactions().size(); i++) {
                     if (record.value().getTransactions().get(i).getSerialNumber() != 0L) {
@@ -132,7 +180,7 @@ public class writeTimestampsToTxt {
                                     record.value().getTransactions().get(i).getOutbank() +
                                     record.value().getTransactions().get(i).getSerialNumber()
                             );
-                            type = "UTXO"; //change along with input
+                            type = "UTXO";
                             writer.println(newNumber);
                             writer.println(type);
                             writer.println(record.timestamp());
