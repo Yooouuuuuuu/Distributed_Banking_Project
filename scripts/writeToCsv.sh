@@ -18,7 +18,7 @@ numOfAccounts=100
 numOfReplicationFactor=1
 initBalance=100000000
 maxPoll=2000
-blockSize=500
+blockSize=1000
 
 blockTimeout=10000 #aggregator only
 numOfData=1000000 #sourceProducer only
@@ -28,6 +28,7 @@ zipfExponent=1
 
 tokensPerSec=10000;
 executionTime=10000;
+numOfTx=2*$tokensPerSec*$executionTime/1000
 
 #args used in script
 numOfaggregators=1
@@ -43,6 +44,13 @@ UTXOUpdatePeriod=100000000 #validator only
 UTXOUpdateBreakTime=1000 #validator only
 UTXODirectAdd="true"
 
+outputTxt1="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/firstTimestamp.txt"
+outputTxt2="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/OriginalData.txt"
+outputTxt3="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/UTXO.txt"
+inputTxt1="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/RPS.txt"
+outputcsv="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/orders.csv"
+
+
 DEBUG=false
 if ${DEBUG}; then
 echo -e "\n=== poll from transactions, order, and localBalance topics === " 
@@ -52,17 +60,17 @@ gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Proj
 gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/consumeLocalBalance $bootstrapServers $schemaRegistryUrl $maxPoll
 fi
 
-echo "consume transactions -- firstTimestamp" 
-java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/consumeTransactions $bootstrapServers $schemaRegistryUrl "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/firstTimestamp.txt"
+echo "consume transactions -- " 
+java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/consumeTransactions $bootstrapServers $schemaRegistryUrl 
 
-echo "consume transactions -- OriginalData & UTXO" 
+echo "consume transactions -- write firstTimestamp, OriginalData & UTXO to txt files" 
 #100000 is the roughly number of data, use to decide how long we should wait until polling finish. no need to be the exact number of data.
-java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/writeTimestampsToTxt "127.0.0.1:9092" "http://127.0.0.1:8081" 100000 "off" "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/OriginalData.txt" "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/UTXO.txt"
+java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/writeTimestampsToTxt $bootstrapServers $schemaRegistryUrl $numOfTx "off" $outputTxt1 $outputTxt2 $outputTxt3
 
 sleep 30s
 
 echo "record and sort order timestamps" 
-java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/sortTimestamps "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/OriginalData.txt" "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/UTXO.txt" "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/RPS.txt" "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/firstTimestamp.txt" "/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/orders.csv"
+java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/sortTimestamps $outputTxt2 $outputTxt3 $inputTxt1 $outputTxt1 $outputcsv
 
 echo -e "\nEnd. "
 

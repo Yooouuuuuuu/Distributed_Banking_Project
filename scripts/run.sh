@@ -18,7 +18,7 @@ numOfAccounts=100
 numOfReplicationFactor=1
 initBalance=100000000
 maxPoll=2000
-blockSize=500
+blockSize=1000
 
 blockTimeout=10000 #aggregator only
 numOfData=1000000 #sourceProducer only
@@ -43,7 +43,7 @@ UTXOUpdatePeriod=100000000 #validator only
 UTXOUpdateBreakTime=1000 #validator only
 UTXODirectAdd="true"
 
-echo "Open 1 aggregator and 1 validator"
+echo "machine$machine Open 1 aggregator and 1 validator"
 gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar aggregator $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger ${machine}aggregator
 
 #three validators can use, validator, validatorMultiThread, validatorMultiThreadNoConcurrentHashMap

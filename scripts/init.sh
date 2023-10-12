@@ -18,7 +18,7 @@ numOfAccounts=100
 numOfReplicationFactor=1
 initBalance=100000000
 maxPoll=2000
-blockSize=500
+blockSize=1000
 
 blockTimeout=10000 #aggregator only
 numOfData=1000000 #sourceProducer only
