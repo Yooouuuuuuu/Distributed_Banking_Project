@@ -2,9 +2,9 @@
 
 #args used in java
 
-machine=1
+machine=2
 
-if [ $machine -eq 1 ] 
+if [ $machine -eq 2 ] 
 then
     bootstrapServers="192.168.50.213:9092"
     schemaRegistryUrl="http://192.168.50.213:8081"
@@ -26,7 +26,7 @@ amountPerTransaction=1 #sourceProducer only
 #${i}aggregator ${i}validator are transactional.ids
 zipfExponent=1
 
-tokensPerSec=50000;
+tokensPerSec=10000;
 executionTime=10000;
 
 #args used in script
@@ -49,23 +49,11 @@ outputTxt3="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/tim
 inputTxt1="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/RPS.txt"
 outputcsv="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/orders.csv"
 
-
-DEBUG=false
-if ${DEBUG}; then
-echo -e "\n=== poll from transactions, order, and localBalance topics === " 
-gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/consumeTransactions $bootstrapServers $schemaRegistryUrl $maxPoll
-gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/consumeOrder $bootstrapServers $schemaRegistryUrl $numOfAccounts 0
-gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/consumeOrder $bootstrapServers $schemaRegistryUrl $numOfAccounts 1
-gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/consumeLocalBalance $bootstrapServers $schemaRegistryUrl $maxPoll
-fi
-
 echo "consume transactions -- write firstTimestamp, OriginalData & UTXO to txt files" 
 #100000 is the roughly number of data, use to decide how long we should wait until polling finish. no need to be the exact number of data.
 java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/writeTimestampsToTxt $bootstrapServers $schemaRegistryUrl $tokensPerSec $executionTime "off" $outputTxt1 $outputTxt2 $outputTxt3
 
-sleep 30s
-
-echo "sort timestamps -- write to csv file" 
+echo "record and sort order timestamps" 
 java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/sortTimestamps $outputTxt2 $outputTxt3 $inputTxt1 $outputTxt1 $outputcsv
 
 echo -e "\nEnd. "

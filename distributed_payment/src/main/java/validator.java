@@ -230,7 +230,8 @@ public class validator {
 
     private static void InitBank(Block recordValue,
                                  ConsumerRecord<String, Block> record,
-                                 boolean orderMultiplePartition) throws ExecutionException, InterruptedException {
+                                 boolean orderMultiplePartition)
+            throws ExecutionException, InterruptedException {
 
         for (int i = 0; i < recordValue.getTransactions().size(); i++) {
             partitionBank.put(record.partition(), record.key());
@@ -335,11 +336,6 @@ public class validator {
                     //if (partitionBank.containsValue(currentBlock.getTransactions().get(i).getInbank())) {
                     bankBalance.compute(currentBlock.getTransactions().get(i).getInAccount(), (key, value)
                             -> value + withdraw);
-                    /*
-                    System.out.println(currentBlock.getTransactions().get(i).getSerialNumber() + " for account " +
-                            currentBlock.getTransactions().get(i).getOutAccount() + " and " +
-                            currentBlock.getTransactions().get(i).getInAccount());
-                     */
 
                     // update "localBalance" topic
                     LocalBalance newBalance =

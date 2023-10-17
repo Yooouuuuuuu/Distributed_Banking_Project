@@ -35,9 +35,11 @@ public class validatorBaselineAgg {
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
         int maxPoll = Integer.parseInt(args[6]);
-        boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
         String log = args[17];
         String transactionalId = args[18];
+        boolean orderMultiplePartition = Boolean.parseBoolean(args[14]);
+        boolean UTXODirectAdd = Boolean.parseBoolean(args[19]);
+        boolean orderSeparateSend = true;
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log);//"off", "trace", "debug", "info", "warn", "error"
@@ -59,10 +61,11 @@ public class validatorBaselineAgg {
                 producer.beginTransaction();
                 try {
                     if (record.value().getTransactions().get(0).getCategory() != 2) {
-                        ProcessBlocks(record.value(), successfulMultiplePartition);
+                        ProcessBlocks(record.value(), orderMultiplePartition, UTXODirectAdd, orderSeparateSend);
+
                     }else {
                         //Category 2 means it is an initialize record for accounts' balance. Only do once when system start.
-                        InitBank(record.value(), record);
+                        InitBank(record.value(), record, orderMultiplePartition);
                     }
                     consumerFromBlocks.commitSync();
                     producer.commitTransaction();
@@ -150,7 +153,11 @@ public class validatorBaselineAgg {
         producer = new KafkaProducer<>(propsProducer);
     }
 
-    private static void InitBank(Block recordValue, ConsumerRecord<String, Block> record) throws ExecutionException, InterruptedException {
+    private static void InitBank(Block recordValue,
+                                 ConsumerRecord<String, Block> record,
+                                 boolean orderMultiplePartition)
+            throws ExecutionException, InterruptedException {
+
         for (int i = 0; i < recordValue.getTransactions().size(); i++) {
             partitionBank.put(record.partition(), record.key());
             bankBalance.put(recordValue.getTransactions().get(i).getOutAccount(),
@@ -162,25 +169,90 @@ public class validatorBaselineAgg {
                     recordValue.getTransactions().get(i).getOutbankPartition(),
                     recordValue.getTransactions().get(i).getOutAccount(),
                     initBalance));
+
+            if (orderMultiplePartition) {
+
+                Transaction initDetail = recordValue.getTransactions().get(i);
+                List<Transaction> listOfInitDetail = new ArrayList<Transaction>();
+                listOfInitDetail.add(initDetail);
+                Block initBlock = Block.newBuilder()
+                        .setTransactions(listOfInitDetail)
+                        .build();
+
+                producer.send(new ProducerRecord<String, Block>("order",
+                        initBlock.getTransactions().get(0).getOutbankPartition(),
+                        initBlock.getTransactions().get(0).getOutbank(),initBlock));
+            }
         }
-        producer.send(new ProducerRecord<String, Block>("successful", recordValue));
+        if (!orderMultiplePartition) {
+            producer.send(new ProducerRecord<String, Block>("order", recordValue));
+        }
 
         System.out.println("Initialized. Now in charge of: " + partitionBank + " (partition:bank)");
     }
 
-    private static void ProcessBlocks(Block recordValue, boolean successfulMultiplePartition)
+    private static void ProcessBlocks(Block recordValue,
+                                      boolean orderMultiplePartition,
+                                      boolean UTXODirectAdd,
+                                      boolean orderSeparateSend)
             throws ExecutionException, IOException, InterruptedException {
 
         //initialize block
-        Block successfulBlock;
-        List<Transaction> listOfSuccessful = new ArrayList<Transaction>();
-        Block rejectedBlock;
-        List<Transaction> listOfRejected = new ArrayList<Transaction>();
-        boolean rejected = false;
+        Block currentBlock = recordValue;
 
         //validate transactions
         for (int i = 0; i < recordValue.getTransactions().size(); i++) {
-            if (recordValue.getTransactions().get(i).getCategory() == 1) { //process UTXO
+            //in this version, we will also see UTXO in blocks, since they don't need to be validated, skip them.
+            if (recordValue.getTransactions().get(i).getCategory() == 0){
+                //check if bankBalance exist
+                if (!bankBalance.containsKey(recordValue.getTransactions().get(i).getOutAccount())) {
+                    PollFromLocalBalance(recordValue.getTransactions().get(i).getOutbankPartition(),
+                            recordValue.getTransactions().get(i).getOutbank());
+                }
+
+                //If the out account have enough money, if not, mark it.
+                if (bankBalance.get(recordValue.getTransactions().get(i).getOutAccount())
+                        < recordValue.getTransactions().get(i).getAmount()) {
+
+                    //while reading order topic, cat = 0 is successful, 3 is rejected, 1 is UTXO, and 2 is the init data
+                    currentBlock.getTransactions().get(i).put("category", 3);
+                    rejectedCount += 1;
+                    System.out.printf("Transaction No.%d cancelled.%n " + rejectedCount + " rejected.\n"
+                            , recordValue.getTransactions().get(i).getSerialNumber());
+                }
+            }
+        }
+
+
+//send to order topic
+        // (if orderMultiplePartition == true && orderSeparateSend == true,
+        // this means only the out account side of the transaction.
+        // We do separate the order records for in account in order to make it serializable.)
+        if (orderMultiplePartition) {
+            producer.send(new ProducerRecord<String, Block>("order",
+                    currentBlock.getTransactions().get(0).getOutbankPartition(),
+                    currentBlock.getTransactions().get(0).getOutbank(),currentBlock));
+        } else {
+            producer.send(new ProducerRecord<String, Block>("order", currentBlock));
+        }
+
+        //process and send due to the result of validation
+        for (int i = 0; i < currentBlock.getTransactions().size(); i++) {
+            //this variable might be used in the two following if conditions
+            long withdraw = currentBlock.getTransactions().get(i).getAmount();
+
+            if (currentBlock.getTransactions().get(i).getCategory() == 0) { // 0 is successful, while 3 is rejected
+                bankBalance.compute(currentBlock.getTransactions().get(i).getOutAccount(), (key, value)
+                        -> value - withdraw);
+
+                // update "localBalance" topic
+                LocalBalance newBalance =
+                        new LocalBalance(bankBalance.get(currentBlock.getTransactions().get(i).getOutAccount()));
+                producer.send(new ProducerRecord<String, LocalBalance>("localBalance",
+                        currentBlock.getTransactions().get(i).getOutbankPartition(),
+                        currentBlock.getTransactions().get(i).getOutAccount(),
+                        newBalance));
+            } else if (currentBlock.getTransactions().get(i).getCategory() == 1) {
                 //check if bankBalance exist
                 if (!bankBalance.containsKey(recordValue.getTransactions().get(i).getInAccount())) {
                     PollFromLocalBalance(recordValue.getTransactions().get(i).getInbankPartition(),
@@ -202,75 +274,72 @@ public class validatorBaselineAgg {
 
                 //just for testing, check if every UTXO is consumed.
                 UTXOCount += 1;
+            }
 
-            } else if (recordValue.getTransactions().get(i).getCategory() == 0){ //process raw transaction
-                //check if bankBalance exist
-                if (!bankBalance.containsKey(recordValue.getTransactions().get(i).getOutAccount())) {
-                    PollFromLocalBalance(recordValue.getTransactions().get(i).getOutbankPartition(),
-                            recordValue.getTransactions().get(i).getOutbank());
-                }
+            //if the inbank account is in charge by this validator, add the money directly rather than sending UTXO
+            if (UTXODirectAdd) {
+                if (bankBalance.containsKey(currentBlock.getTransactions().get(i).getInAccount())) {
 
-                //If the out account have enough money, pay for it.
-                if (bankBalance.get(recordValue.getTransactions().get(i).getOutAccount())
-                        >= recordValue.getTransactions().get(i).getAmount()) {
-                    long withdraw = recordValue.getTransactions().get(i).getAmount();
-                    bankBalance.compute(recordValue.getTransactions().get(i).getOutAccount(), (key, value)
-                            -> value - withdraw);
+                    //if (partitionBank.containsValue(currentBlock.getTransactions().get(i).getInbank())) {
+                    bankBalance.compute(currentBlock.getTransactions().get(i).getInAccount(), (key, value)
+                            -> value + withdraw);
 
                     // update "localBalance" topic
                     LocalBalance newBalance =
-                            new LocalBalance(bankBalance.get(recordValue.getTransactions().get(i).getOutAccount()));
+                            new LocalBalance(bankBalance.get(currentBlock.getTransactions().get(i).getInAccount()));
                     producer.send(new ProducerRecord<String, LocalBalance>("localBalance",
-                            recordValue.getTransactions().get(i).getOutbankPartition(),
-                            recordValue.getTransactions().get(i).getOutAccount(),
+                            currentBlock.getTransactions().get(i).getInbankPartition(),
+                            currentBlock.getTransactions().get(i).getInAccount(),
                             newBalance));
 
-                    //send UTXO after every transaction
-                    Transaction UTXODetail = recordValue.getTransactions().get(i);
-                    UTXODetail.put("category", 1);
+                    // send to order topic if order records are separated (into in and out)
+                    if (orderSeparateSend) {
+                        Transaction orderInDetail = currentBlock.getTransactions().get(i);
+
+                        //these are records similar to UTXO, while never really become one.
+                        //However, we consider them the same while reading order topic, thus change the cat to 1 (as UTXO)
+                        orderInDetail.put("category", 1);
+
+                        List<Transaction> listOfOrderInDetail = new ArrayList<Transaction>();
+                        listOfOrderInDetail.add(orderInDetail);
+                        Block orderIn = Block.newBuilder()
+                                .setTransactions(listOfOrderInDetail)
+                                .build();
+
+                        producer.send(new ProducerRecord<String, Block>("order",
+                                orderIn.getTransactions().get(0).getInbankPartition(),
+                                orderIn.getTransactions().get(0).getInbank(),
+                                orderIn));
+                    }
+
+                } else {
+                    //send UTXO
+                    Transaction UTXODetail = currentBlock.getTransactions().get(i);
                     List<Transaction> listOfUTXODetail = new ArrayList<Transaction>();
                     listOfUTXODetail.add(UTXODetail);
                     Block UTXOBlock = Block.newBuilder()
                             .setTransactions(listOfUTXODetail)
                             .build();
-                    producer.send(new ProducerRecord<String, Block>("transactions",
+                    producer.send(new ProducerRecord<String, Block>("UTXO",
                             UTXOBlock.getTransactions().get(0).getInbankPartition(),
                             UTXOBlock.getTransactions().get(0).getInbank(),
                             UTXOBlock));
-
-                    //different to former validator, we build the successfulTx block manually instead of
-                    // deleting rejected from original block. If we go for the former approach, we have to
-                    // delete UTXO, too.
-                    Transaction successfulTx = recordValue.getTransactions().get(i);
-                    listOfSuccessful.add(successfulTx);
-
-                } else {
-                    // If balance is still not enough, reject the TX.
-                    rejected = true;
-                    Transaction rejectedTx = recordValue.getTransactions().get(i);
-                    listOfRejected.add(rejectedTx);
-                    rejectedCount += 1;
-                    System.out.printf("Transaction No.%d cancelled.%n " + rejectedCount + " rejected.\n"
-                            , recordValue.getTransactions().get(i).getSerialNumber());
                 }
+            }else {
+                //send UTXO
+                Transaction UTXODetail = currentBlock.getTransactions().get(i);
+                List<Transaction> listOfUTXODetail = new ArrayList<Transaction>();
+                listOfUTXODetail.add(UTXODetail);
+                Block UTXOBlock = Block.newBuilder()
+                        .setTransactions(listOfUTXODetail)
+                        .build();
+                producer.send(new ProducerRecord<String, Block>("UTXO",
+                        UTXOBlock.getTransactions().get(0).getInbankPartition(),
+                        UTXOBlock.getTransactions().get(0).getInbank(),
+                        UTXOBlock));
             }
         }
-            // send rejected
-        if (rejected) {
-            rejectedBlock = Block.newBuilder().setTransactions(listOfRejected).build();
-            producer.send(new ProducerRecord<String, Block>("rejected", rejectedBlock));
-        }
 
-        // send successful
-        successfulBlock = Block.newBuilder().setTransactions(listOfSuccessful).build();
-        //System.out.println(successfulBlock.getTransactions().size());
-        if (!successfulMultiplePartition) {
-            producer.send(new ProducerRecord<String, Block>("successful", successfulBlock));
-        } else {
-            producer.send(new ProducerRecord<String, Block>("successful",
-                    successfulBlock.getTransactions().get(0).getOutbankPartition(),
-                    successfulBlock.getTransactions().get(0).getOutbank(), successfulBlock));
-        }
     }
 
     private static void PollFromLocalBalance(int outbankPartition, String bankID) {

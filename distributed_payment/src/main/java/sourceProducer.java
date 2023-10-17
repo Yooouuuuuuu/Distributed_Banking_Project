@@ -172,7 +172,11 @@ public class sourceProducer {
         PrintWriter writer = new PrintWriter(outputTxt);
 
         writer.println("numbers of payments");
-        writer.println(serialNumber-1);
+        if (machine == String.valueOf(1)) {
+            writer.println((serialNumber - 1) / 2+1);
+        }else {
+            writer.println((serialNumber - 1) / 2);
+        }
         writer.println("source producer execution time");
         writer.println(spendTime);
         writer.println("RPS");
