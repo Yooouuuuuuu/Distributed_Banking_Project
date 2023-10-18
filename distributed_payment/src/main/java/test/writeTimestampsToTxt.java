@@ -214,15 +214,13 @@ public class writeTimestampsToTxt {
         while (startTime + (numOfTX / 100) > System.currentTimeMillis()) { //might have to set bigger if input increase
             ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, Block> record : records) {
-                for (int i = 0; i < record.value().getTransactions().size(); i++) {
-                    newNumber = newNumberMap.get(
-                            record.value().getTransactions().get(i).getOutbank() +
-                                    record.value().getTransactions().get(i).getSerialNumber()
-                    );
-                    writer.println(newNumber);
-                    writer.println(type);
-                    writer.println(record.timestamp());
-                }
+                newNumber = newNumberMap.get(
+                        record.value().getTransactions().get(0).getOutbank() +
+                                record.value().getTransactions().get(0).getSerialNumber()
+                );
+                writer.println(newNumber);
+                writer.println(type);
+                writer.println(record.timestamp());
             }
         }
         writer.flush();
