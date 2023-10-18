@@ -11,7 +11,6 @@ import java.util.*;
 public class sortTimestamps {
     public static void main(String[] args) throws IOException {
 
-
         String inputTxt1 = args[0];
         String inputTxt2 = args[1];
         String inputTxt3 = args[2];

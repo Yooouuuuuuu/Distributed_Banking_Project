@@ -100,7 +100,7 @@ public class writeTimestampsToTxt {
             for (ConsumerRecord<String, Block> record : records) {
                 for (int i = 0; i < record.value().getTransactions().size(); i++) {
                     if (record.value().getTransactions().get(i).getSerialNumber() != 0L) {
-                        if (record.value().getTransactions().get(i).getCategory() == 0) { //original data
+                        if (record.value().getTransactions().get(i).getCategory() == 0) { //as original data
                             newNumber = count;
                             newNumberMap.put(
                                     record.value().getTransactions().get(i).getOutbank() +
@@ -150,10 +150,10 @@ public class writeTimestampsToTxt {
             for (ConsumerRecord<String, Block> record : records) {
                 for (int i = 0; i < record.value().getTransactions().size(); i++) {
                     if (record.value().getTransactions().get(i).getSerialNumber() != 0L) {
-                        if (record.value().getTransactions().get(i).getCategory() == 1) { //UTXO
+                        if (record.value().getTransactions().get(i).getCategory() == 1) { //as UTXO
                             newNumber = newNumberMap.get(
                                     record.value().getTransactions().get(i).getOutbank() +
-                                    record.value().getTransactions().get(i).getSerialNumber()
+                                            record.value().getTransactions().get(i).getSerialNumber()
                             );
                             type = "UTXO";
                             writer.println(newNumber);
@@ -207,7 +207,7 @@ public class writeTimestampsToTxt {
 
     private static void consumerUntested(String filename, long numOfTX) throws FileNotFoundException {
         long newNumber;
-        String type;
+        String type = "untested";
         PrintWriter writer = new PrintWriter(filename);
         long startTime = System.currentTimeMillis();
 
@@ -215,19 +215,16 @@ public class writeTimestampsToTxt {
             ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, Block> record : records) {
                 for (int i = 0; i < record.value().getTransactions().size(); i++) {
-                    if (record.value().getTransactions().get(i).getCategory() == 1) { //UTXO
-                            newNumber = newNumberMap.get(
-                                    record.value().getTransactions().get(i).getOutbank() +
-                                            record.value().getTransactions().get(i).getSerialNumber()
-                            );
-                            type = "untested";
-                            writer.println(newNumber);
-                            writer.println(type);
-                            writer.println(record.timestamp());
-                        }
-                    }
+                    newNumber = newNumberMap.get(
+                            record.value().getTransactions().get(i).getOutbank() +
+                                    record.value().getTransactions().get(i).getSerialNumber()
+                    );
+                    writer.println(newNumber);
+                    writer.println(type);
+                    writer.println(record.timestamp());
                 }
             }
+        }
         writer.flush();
         writer.close();
         System.out.println(filename + " is written complete.");
