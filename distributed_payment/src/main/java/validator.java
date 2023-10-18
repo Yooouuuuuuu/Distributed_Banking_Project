@@ -85,7 +85,6 @@ public class validator {
 
                                     } catch (InterruptedException | ExecutionException | IOException e) {
                                     }
-                                    //System.out.println(bankBalance);
                                 } else if (record.value().getTransactions().get(0).getCategory() == 2) {
                                     //Category 2 means it is an initialize record for accounts' balance. Only do once when system start.
                                     try {

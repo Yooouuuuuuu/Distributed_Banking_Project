@@ -275,7 +275,7 @@ public class validatorBaselineAgg {
             }
 
             //if the inbank account is in charge by this validator, add the money directly rather than sending UTXO
-            if (UTXODirectAdd) {
+            if (UTXODirectAdd && currentBlock.getTransactions().get(i).getCategory() == 0) {
                 if (bankBalance.containsKey(currentBlock.getTransactions().get(i).getInAccount())) {
 
                     //if (partitionBank.containsValue(currentBlock.getTransactions().get(i).getInbank())) {
@@ -318,7 +318,7 @@ public class validatorBaselineAgg {
                     Block UTXOBlock = Block.newBuilder()
                             .setTransactions(listOfUTXODetail)
                             .build();
-                    producer.send(new ProducerRecord<String, Block>("UTXO",
+                    producer.send(new ProducerRecord<String, Block>("transactions",
                             UTXOBlock.getTransactions().get(0).getInbankPartition(),
                             UTXOBlock.getTransactions().get(0).getInbank(),
                             UTXOBlock));
@@ -331,7 +331,7 @@ public class validatorBaselineAgg {
                 Block UTXOBlock = Block.newBuilder()
                         .setTransactions(listOfUTXODetail)
                         .build();
-                producer.send(new ProducerRecord<String, Block>("UTXO",
+                producer.send(new ProducerRecord<String, Block>("transactions",
                         UTXOBlock.getTransactions().get(0).getInbankPartition(),
                         UTXOBlock.getTransactions().get(0).getInbank(),
                         UTXOBlock));
