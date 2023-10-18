@@ -16,7 +16,8 @@ fi
 outputTxt1="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/firstTimestamp.txt"
 outputTxt2="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/OriginalData.txt"
 outputTxt3="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/UTXO.txt"
-inputTxt1="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/RPS.txt"
+outputTxt4="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/untested.txt"
+#inputTxt1="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/RPS.txt"
 outputcsv="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/orders.csv"
 logger="off" #"off", "trace", "debug", "info", "warn", "error"
 
@@ -26,10 +27,10 @@ executionTime=10000;
 
 echo "consume transactions -- write firstTimestamp, OriginalData & UTXO to txt files" 
 #100000 is the roughly number of data, use to decide how long we should wait until polling finish. no need to be the exact number of data.
-java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/writeTimestampsToTxt $bootstrapServers $schemaRegistryUrl $tokensPerSec $executionTime "off" $outputTxt1 $outputTxt2 $outputTxt3
+java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/writeTimestampsToTxt $bootstrapServers $schemaRegistryUrl $tokensPerSec $executionTime "off" $outputTxt1 $outputTxt2 $outputTxt3 $outputTxt4
 
 echo "record and sort order timestamps" 
-java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/sortTimestamps $outputTxt2 $outputTxt3 $inputTxt1 $outputTxt1 $outputcsv
+java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test/sortTimestamps $outputTxt2 $outputTxt3 $outputTxt4 $outputTxt1 $outputcsv
 
 echo -e "\nEnd. "
 

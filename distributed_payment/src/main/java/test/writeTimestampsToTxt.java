@@ -17,9 +17,7 @@ public class writeTimestampsToTxt {
     static KafkaConsumer<String, Block> consumer;
     static HashMap<String, Long> newNumberMap = new HashMap<>();
 
-
     public static void main(String[] args) throws Exception {
-
 
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
@@ -29,6 +27,7 @@ public class writeTimestampsToTxt {
         String outputTxt1 = args[5];
         String outputTxt2 = args[6];
         String outputTxt3 = args[7];
+        String outputTxt4 = args[8];
 
         long numOfTX = 2*tokensPerSec*(executionTime/1000);
 
@@ -43,16 +42,8 @@ public class writeTimestampsToTxt {
         props.setProperty("schema.registry.url", schemaRegistryUrl);
         props.setProperty("specific.avro.reader", "true");
 
-        //transaction topic, find the timestamp of the first data
-        String inputTopic = "transactions";
-        consumer =
-                new KafkaConsumer<String, Block>(props);
-        consumer.subscribe(Collections.singleton(inputTopic));
-        findFirstTimestamp(outputTxt1);
-        consumer.close();
-
         //order topic, record the timestamps of original and UTXO separately
-        inputTopic = "order";
+        String inputTopic = "order";
         consumer =
                 new KafkaConsumer<String, Block>(props);
         consumer.subscribe(Collections.singletonList(inputTopic));
@@ -60,7 +51,7 @@ public class writeTimestampsToTxt {
         consumeOriginal(outputTxt2, numOfTX);
         consumer.close();
 
-
+        //In order to read the same topic from begging again, seek the offset to 0
         consumer =
                 new KafkaConsumer<>(props);
         consumer.subscribe(Collections.singletonList(inputTopic));
@@ -73,43 +64,25 @@ public class writeTimestampsToTxt {
         consumerUTXO(outputTxt3, numOfTX);
         consumer.close();
 
+        //transaction topic, find the timestamp of the first data
+        inputTopic = "transactions";
+        consumer =
+                new KafkaConsumer<String, Block>(props);
+        consumer.subscribe(Collections.singleton(inputTopic));
+        findFirstTimestamp(outputTxt1, numOfTX);
+        consumer.close();
 
+        //In order to read the same topic from begging again, seek the offset to 0
+        consumer =
+                new KafkaConsumer<>(props);
+        consumer.subscribe(Collections.singletonList(inputTopic));
+        consumer.poll(0);  // without this, the assignment will be empty.
+        consumer.assignment().forEach(t -> {
+            consumer.seek(t, 0);
+        });
 
-
-    }
-    private static void findFirstTimestamp(String filename) throws FileNotFoundException {
-        long timeout = System.currentTimeMillis() + 10000;
-        long firstRecordTime = 9999999999999L;
-
-        while (true) {
-            ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
-            for (ConsumerRecord<String, Block> record : records) {
-                for (int i = 0; i < record.value().getTransactions().size(); i++) {
-                    if (record.value().getTransactions().get(i).getSerialNumber() == 1) {
-                        //there might have more than one data which SerialNumber() == 1
-                        // if there are more than one generator
-                        if (firstRecordTime > record.timestamp()) {
-                            firstRecordTime = record.timestamp();
-                        }
-                    }
-                    //System.out.println(record.value().getTransactions().get(i));
-                    timeout = System.currentTimeMillis();
-                }
-            }
-            if (System.currentTimeMillis() > timeout) {
-                break;
-            }
-        }
-
-        PrintWriter writer = new PrintWriter(filename);
-
-        writer.println("first timestamp of transactions topic");
-        writer.println(firstRecordTime);
-
-        writer.flush();
-        writer.close();
-
-        System.out.println(filename + " is written complete.");
+        consumerUntested(outputTxt4, numOfTX);
+        consumer.close();
 
     }
 
@@ -194,6 +167,71 @@ public class writeTimestampsToTxt {
         writer.flush();
         writer.close();
         System.out.println(filename + " is written complete.");
+    }
+
+    private static void findFirstTimestamp(String filename, long numOfTX) throws FileNotFoundException {
+        long timeout = System.currentTimeMillis() + 10000;
+        long firstRecordTime = 9999999999999L;
+
+        while (true) {
+            ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
+            for (ConsumerRecord<String, Block> record : records) {
+                for (int i = 0; i < record.value().getTransactions().size(); i++) {
+                    if (record.value().getTransactions().get(i).getSerialNumber() == 1) {
+                        //there might have more than one data which SerialNumber() == 1
+                        // if there are more than one generator
+                        if (firstRecordTime > record.timestamp()) {
+                            firstRecordTime = record.timestamp();
+                        }
+                    }
+                    //System.out.println(record.value().getTransactions().get(i));
+                    timeout = System.currentTimeMillis();
+                }
+            }
+            if (System.currentTimeMillis() > timeout) {
+                break;
+            }
+        }
+
+        PrintWriter writer = new PrintWriter(filename);
+
+        writer.println("first timestamp of transactions topic");
+        writer.println(firstRecordTime);
+
+        writer.flush();
+        writer.close();
+
+        System.out.println(filename + " is written complete.");
+
+    }
+
+    private static void consumerUntested(String filename, long numOfTX) throws FileNotFoundException {
+        long newNumber;
+        String type;
+        PrintWriter writer = new PrintWriter(filename);
+        long startTime = System.currentTimeMillis();
+
+        while (startTime + (numOfTX / 100) > System.currentTimeMillis()) { //might have to set bigger if input increase
+            ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
+            for (ConsumerRecord<String, Block> record : records) {
+                for (int i = 0; i < record.value().getTransactions().size(); i++) {
+                    if (record.value().getTransactions().get(i).getCategory() == 1) { //UTXO
+                            newNumber = newNumberMap.get(
+                                    record.value().getTransactions().get(i).getOutbank() +
+                                            record.value().getTransactions().get(i).getSerialNumber()
+                            );
+                            type = "untested";
+                            writer.println(newNumber);
+                            writer.println(type);
+                            writer.println(record.timestamp());
+                        }
+                    }
+                }
+            }
+        writer.flush();
+        writer.close();
+        System.out.println(filename + " is written complete.");
+
     }
 
 }

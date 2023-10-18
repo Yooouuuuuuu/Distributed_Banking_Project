@@ -31,7 +31,8 @@ public class sortTimestamps {
         List<String> UTXO = Files.readAllLines(Paths.get(inputTxt2),
                 StandardCharsets.UTF_8);
 
-        List<String> RPS = Files.readAllLines(Paths.get(inputTxt3),
+        //List<String> RPS = Files.readAllLines(Paths.get(inputTxt3), StandardCharsets.UTF_8);
+        List<String> untested = Files.readAllLines(Paths.get(inputTxt3),
                 StandardCharsets.UTF_8);
 
         List<String> firstTimestamp = Files.readAllLines(Paths.get(inputTxt4),
@@ -47,7 +48,26 @@ public class sortTimestamps {
             }
         }
 
+        List<Long> latency = new ArrayList<>();
+
+
         //calculate latency
+        /*
+        List<Long> latency = new ArrayList<>();
+        for (int i = 0; i < successful.size(); i += 3) {
+            int j = 0;
+            while (!Objects.equals(successful.get(i), UTXO.get(j))) {
+                j += 3;
+            }
+
+            int k = 0;
+            while (!Objects.equals(successful.get(i), untested.get(k))) {
+                k += 3;
+            }
+
+            latency.add(Long.parseLong(UTXO.get(j+2)) - Long.parseLong(untested.get(k+2)));
+        }
+
         List<Long> latency = new ArrayList<>();
         for (int i = 0; i < successful.size(); i += 3) {
             int j = 0;
@@ -56,39 +76,66 @@ public class sortTimestamps {
             }
             latency.add(Long.parseLong(UTXO.get(j+2)) - Long.parseLong(successful.get(i+2)));
         }
+         */
 
         //start writing to csv file
         BufferedWriter bw = new BufferedWriter(new FileWriter(outputCsv));
-
+        int latencyNum = 0;
         //titles
-        bw.write("number" + "," + "type" + "," + "timestamp" + "," + "UTXO timestamp" + "," + "latency");
+        bw.write("number" + "," + "type" + "," + "untested" + "," + "validated" + "," + "UTXO" + "," + "latency");
 
         //number, type, two timestamps, and latency
         for (int i = 0; i < successful.size(); i += 3) {
+            //find the same transaction in UTXO
             int j = 0;
             while (!Objects.equals(successful.get(i), UTXO.get(j))) {
                 j += 3;
             }
+
+            //find the same transaction in untested
+            int k = 0;
+            while (!Objects.equals(successful.get(i), untested.get(k))) {
+                k += 3;
+            }
+
+            latency.add(Long.parseLong(UTXO.get(j+2)) - Long.parseLong(untested.get(k+2)));
+
             bw.newLine();
             String[] data = {
                     successful.get(i),
                     successful.get(i+1),
+                    untested.get(k+2),
                     successful.get(i+2),
                     UTXO.get(j+2),
-                    String.valueOf(latency.get((i+3)/3-1))
+                    String.valueOf(latency.get(latencyNum))
+                    //String.valueOf(latency.get((i+3)/3-1))
             };
+            latencyNum += 1;
             bw.write(data[0] + "," + data[1] + "," + data[2] + "," + data[3] + "," + data[4]);//寫到新檔案中
         }
 
+
+        long lastUntested = 0;
+        for (int i = 0; i < untested.size(); i += 3) {
+            long timeStamp = Long.parseLong(untested.get(i+2));
+            if (timeStamp > lastUntested) {
+                lastUntested = timeStamp;
+            }
+        }
+        float RPS = (float) ((originalData.size()/3)/
+                ((lastUntested - Long.parseLong(firstTimestamp.get(1))) / 1000));
+
         //others
         bw.newLine();
-        bw.write("number of payments" + "," + RPS.get(1));
+        bw.write("number of payments" + "," + originalData.size()/3);
 
+        /*
         bw.newLine();
         bw.write("source producer execution time" + "," + RPS.get(3));
+         */
 
         bw.newLine();
-        bw.write("RPS" + "," + RPS.get(5));
+        bw.write("RPS" + "," + RPS);
 
         bw.newLine();
         bw.write("first timestamp of transactions topic" + "," + firstTimestamp.get(1));
@@ -97,8 +144,8 @@ public class sortTimestamps {
         bw.write("last timestamp of order topic" + "," + UTXO.get(UTXO.size()-1));
 
         //we should use originalData.size())-1 rather than successful nor UTXO to count rejected payments as well
-        float TPS = (float) (originalData.size()/3)/
-                ((Long.parseLong(UTXO.get(UTXO.size()-1)) - Long.parseLong(firstTimestamp.get(1)))/1000);
+        float TPS = (float) ((originalData.size()/3)/
+                ((Long.parseLong(UTXO.get(UTXO.size()-1)) - Long.parseLong(firstTimestamp.get(1)))/1000));
         bw.newLine();
         bw.write("TPS" + "," + TPS);
 
@@ -115,8 +162,8 @@ public class sortTimestamps {
         bw.close();
         //System.out.println(outputCsv + " is written complete.");
 
-        System.out.println("number of payments: " + RPS.get(1));
-        System.out.println("RPS: " + RPS.get(5));
+        System.out.println("number of payments: " + originalData.size()/3);
+        System.out.println("RPS: " + RPS);
         System.out.println("TPS: " + TPS);
         System.out.println("maximum latency: " + maxLatency);
         System.out.println("mean value of latency: " + average);

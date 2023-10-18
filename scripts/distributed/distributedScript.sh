@@ -7,7 +7,7 @@
 #endMachine.sh
 #writeToCsv.sh machineNum tokensPerSec
 
-for tokensPerSec in 50000 100000
+for tokensPerSec in 10000 20000
 do
 #using machine 1 to initialize Kafka topics
 sshpass -p nsd ssh nsd@140.119.164.32 -p 9010 << MACHINE1
@@ -29,8 +29,8 @@ sleep 30s
 
 #sending data
 echo '=== sending data ==='
-gnome-terminal -- ./sendMachine1.sh 1 tokensPerSec
-gnome-terminal -- ./sendMachine2.sh 2 tokensPerSec
+gnome-terminal -- ./sendMachine1.sh 1 $tokensPerSec
+gnome-terminal -- ./sendMachine2.sh 2 $tokensPerSec
 sleep 300s
 
 #close consumers
@@ -44,7 +44,7 @@ echo '=== Access into machine 2 (port:9011) ==='
 
 echo '=== read and sort timestamps ==='
 cd /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/distributed
-./writeToCsv.sh 2 tokensPerSec
+./writeToCsv.sh 2 $tokensPerSec
 
 echo '=== Exit machine 2 (port:9011) ==='
 exit

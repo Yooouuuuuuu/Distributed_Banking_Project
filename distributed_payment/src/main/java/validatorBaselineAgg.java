@@ -83,8 +83,7 @@ public class validatorBaselineAgg {
             interval = time1 - time2;
             time1 = System.currentTimeMillis();
             if (records.count() > 0) {
-                System.out.println("----------------------------------------------------\n " +
-                        "poll interval: " + interval);
+                //System.out.println("----------------------------------------------------\n " + "poll interval: " + interval);
                 //System.out.println("poll count: " + pollCount + " poll size: " + records.count());
                 System.out.println("numbers of UTXO consumed: " + UTXOCount);
             }
@@ -223,8 +222,7 @@ public class validatorBaselineAgg {
             }
         }
 
-
-//send to order topic
+        //send to order topic
         // (if orderMultiplePartition == true && orderSeparateSend == true,
         // this means only the out account side of the transaction.
         // We do separate the order records for in account in order to make it serializable.)
