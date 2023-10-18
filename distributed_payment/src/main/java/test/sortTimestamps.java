@@ -107,10 +107,9 @@ public class sortTimestamps {
                     successful.get(i+2),
                     UTXO.get(j+2),
                     String.valueOf(latency.get(latencyNum))
-                    //String.valueOf(latency.get((i+3)/3-1))
             };
             latencyNum += 1;
-            bw.write(data[0] + "," + data[1] + "," + data[2] + "," + data[3] + "," + data[4]);//寫到新檔案中
+            bw.write(data[0] + "," + data[1] + "," + data[2] + "," + data[3] + "," + data[4] + "," + data[5]);//寫到新檔案中
         }
 
 
