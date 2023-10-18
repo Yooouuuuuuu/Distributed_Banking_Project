@@ -48,11 +48,6 @@ public class validatorBaselineAgg {
         //Logger logger = LoggerFactory.getLogger(oldValidators.validatorDirectPollUTXO.class);
         producer.initTransactions();
 
-        //variables for testing
-        long time1 = System.currentTimeMillis();
-        long time2;
-        long interval;
-
         //poll from "blocks" topic
         while (true) {
             ConsumerRecords<String, Block> records = consumerFromBlocks.poll(Duration.ofMillis(100));
@@ -79,9 +74,6 @@ public class validatorBaselineAgg {
             }
 
             //variables for testing
-            time2 = System.currentTimeMillis();
-            interval = time1 - time2;
-            time1 = System.currentTimeMillis();
             if (records.count() > 0) {
                 //System.out.println("----------------------------------------------------\n " + "poll interval: " + interval);
                 //System.out.println("poll count: " + pollCount + " poll size: " + records.count());
@@ -251,11 +243,14 @@ public class validatorBaselineAgg {
                         currentBlock.getTransactions().get(i).getOutAccount(),
                         newBalance));
             } else if (currentBlock.getTransactions().get(i).getCategory() == 1) {
+                /*
                 //check if bankBalance exist
                 if (!bankBalance.containsKey(recordValue.getTransactions().get(i).getInAccount())) {
                     PollFromLocalBalance(recordValue.getTransactions().get(i).getInbankPartition(),
                             recordValue.getTransactions().get(i).getInbank());
                 }
+
+                 */
 
                 //add money to inbank
                 long UTXO = recordValue.getTransactions().get(i).getAmount();
