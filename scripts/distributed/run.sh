@@ -2,7 +2,7 @@
 
 #args used in java
 
-machine=1
+machine=$1
 
 if [ $machine -eq 2 ] 
 then
@@ -14,40 +14,27 @@ else
 fi
 
 numOfPartitions=2
-numOfAccounts=100
-numOfReplicationFactor=1
-initBalance=100000000
-maxPoll=2000
+numOfAccounts=1000
+blockTimeout=1000
+orderMultiplePartition="true"
+UTXODirectAdd="true"
+logger="error" #"off", "trace", "debug", "info", "warn", "error"
+
+#need to change for testing
+validatorMaxPoll=2000
+aggregatorMaxPoll=2000
 blockSize=1000
 
-blockTimeout=10000 #aggregator only
-numOfData=1000000 #sourceProducer only
-amountPerTransaction=1 #sourceProducer only
-#${i}aggregator ${i}validator are transactional.ids
-zipfExponent=1
 
-tokensPerSec=50000;
-executionTime=10000;
 
-#args used in script
-numOfaggregators=1
-numOfvalidators=1
-
-#not often change or not used
-logger="error" #"off", "trace", "debug", "info", "warn", "error"
-successfulMultiplePartition="true"
-UTXODoNotAgg="true" #initialize only
-randomAmount="false" #1000-100000
-aggUTXOTime=5000 #sumUTXO only
-UTXOUpdatePeriod=100000000 #validator only
-UTXOUpdateBreakTime=1000 #validator only
-UTXODirectAdd="true"
-
-echo "machine$machine Open 1 aggregator and 1 validator"
+echo "machine $machine Open a aggregator and a validator"
 
 #validator or validatorBaselineAgg
-gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar validatorBaselineAgg $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger ${machine}validator $UTXODirectAdd & 
-gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar aggregator $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $numOfReplicationFactor $initBalance $maxPoll $blockSize $blockTimeout $aggUTXOTime $numOfData $amountPerTransaction $UTXOUpdatePeriod $UTXOUpdateBreakTime $successfulMultiplePartition $UTXODoNotAgg $randomAmount $logger ${machine}aggregator &
+gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar validator $bootstrapServers $schemaRegistryUrl $validatorMaxPoll $orderMultiplePartition $UTXODirectAdd ${machine}validator $logger & 
+
+#aggregator or aggregatorForBaseline
+gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar aggregator $bootstrapServers $schemaRegistryUrl $numOfPartitions $aggregatorMaxPoll $blockSize $blockTimeout ${machine}aggregator $logger &
+
 echo -e "\nEnd. "
 
 

@@ -30,11 +30,12 @@ public class aggregatorForBaseline {
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
         int numOfPartitions = Integer.parseInt(args[2]);
-        int maxPoll = Integer.parseInt(args[6]);
-        int blockSize = Integer.parseInt(args[7]);
-        long blockTimeout = Long.parseLong(args[8]); //aggregator only
-        String log = args[17];
-        String transactionalId = args[18];
+        int maxPoll = Integer.parseInt(args[3]);
+        int blockSize = Integer.parseInt(args[4]);
+        long blockTimeout = Long.parseLong(args[5]); //aggregator only
+        String transactionalId = args[6];
+        String log = args[7];
+
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log); //"off", "trace", "debug", "info", "warn", "error".

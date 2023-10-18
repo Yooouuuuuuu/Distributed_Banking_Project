@@ -2,7 +2,7 @@
 
 #args used in java
 
-machine=2
+machine=$1
 
 if [ $machine -eq 2 ] 
 then
@@ -13,41 +13,16 @@ else
     schemaRegistryUrl="http://192.168.50.224:8081"
 fi
 
-numOfPartitions=2
-numOfAccounts=100
-numOfReplicationFactor=1
-initBalance=100000000
-maxPoll=2000
-blockSize=1000
-
-blockTimeout=10000 #aggregator only
-numOfData=1000000 #sourceProducer only
-amountPerTransaction=1 #sourceProducer only
-#${i}aggregator ${i}validator are transactional.ids
-zipfExponent=1
-
-tokensPerSec=10000;
-executionTime=10000;
-
-#args used in script
-numOfaggregators=1
-numOfvalidators=1
-
-#not often change or not used
-logger="off" #"off", "trace", "debug", "info", "warn", "error"
-successfulMultiplePartition="true"
-UTXODoNotAgg="true" #initialize only
-randomAmount="false" #1000-100000
-aggUTXOTime=5000 #sumUTXO only
-UTXOUpdatePeriod=100000000 #validator only
-UTXOUpdateBreakTime=1000 #validator only
-UTXODirectAdd="true"
-
 outputTxt1="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/firstTimestamp.txt"
 outputTxt2="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/OriginalData.txt"
 outputTxt3="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/UTXO.txt"
 inputTxt1="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/RPS.txt"
 outputcsv="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/orders.csv"
+logger="off" #"off", "trace", "debug", "info", "warn", "error"
+
+#need to change for testing
+tokensPerSec=$2;
+executionTime=10000;
 
 echo "consume transactions -- write firstTimestamp, OriginalData & UTXO to txt files" 
 #100000 is the roughly number of data, use to decide how long we should wait until polling finish. no need to be the exact number of data.

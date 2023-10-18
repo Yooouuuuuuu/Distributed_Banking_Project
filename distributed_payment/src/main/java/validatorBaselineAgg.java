@@ -34,11 +34,11 @@ public class validatorBaselineAgg {
         //inputs
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
-        int maxPoll = Integer.parseInt(args[6]);
-        String log = args[17];
-        String transactionalId = args[18];
-        boolean orderMultiplePartition = Boolean.parseBoolean(args[14]);
-        boolean UTXODirectAdd = Boolean.parseBoolean(args[19]);
+        int maxPoll = Integer.parseInt(args[2]);
+        boolean orderMultiplePartition = Boolean.parseBoolean(args[3]);
+        boolean UTXODirectAdd = Boolean.parseBoolean(args[4]);
+        String transactionalId = args[5];
+        String log = args[6];
         boolean orderSeparateSend = true;
 
         //setups

@@ -24,9 +24,9 @@ public class initialize {
         int numOfAccounts = Integer.parseInt(args[3]);
         short numOfReplicationFactor = Short.parseShort(args[4]);
         long initBalance = Long.parseLong(args[5]);
-        boolean successfulMultiplePartition = Boolean.parseBoolean(args[14]);
-        boolean UTXODoNotAgg = Boolean.parseBoolean(args[15]);
-        String log = args[17];
+        boolean successfulMultiplePartition = Boolean.parseBoolean(args[6]);
+        boolean UTXODoNotAgg = Boolean.parseBoolean(args[7]);
+        String log = args[8];
 
         // log setting
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log); //"off", "trace", "debug", "info", "warn", "error".

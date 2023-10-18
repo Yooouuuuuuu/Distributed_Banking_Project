@@ -98,7 +98,7 @@ public class sortTimestamps {
 
         //we should use originalData.size())-1 rather than successful nor UTXO to count rejected payments as well
         float TPS = (float) (originalData.size()/3)/
-                (1000*(Long.parseLong(UTXO.get(UTXO.size()-1)) - Long.parseLong(firstTimestamp.get(1))));
+                ((Long.parseLong(UTXO.get(UTXO.size()-1)) - Long.parseLong(firstTimestamp.get(1)))/1000);
         bw.newLine();
         bw.write("TPS" + "," + TPS);
 

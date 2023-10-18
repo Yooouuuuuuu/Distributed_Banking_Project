@@ -22,13 +22,13 @@ public class sourceProducer {
         String schemaRegistryUrl = args[1];
         int numOfPartitions = Integer.parseInt(args[2]);
         int numOfAccounts = Integer.parseInt(args[3]);
-        long initBalance = Long.parseLong(args[5]);
-        long amountPerTransaction = Long.parseLong(args[11]); //sourceProducer only
-        float zipfExponent = Float.parseFloat(args[18]);
-        float tokensPerSec = Float.parseFloat(args[19]);
-        long executionTime = Long.parseLong(args[20]);
-        String outputTxt = args[21];
-        String machine = args[22];
+        long initBalance = Long.parseLong(args[4]);
+        long amountPerTransaction = Long.parseLong(args[5]); //sourceProducer only
+        float zipfExponent = Float.parseFloat(args[6]);
+        float tokensPerSec = Float.parseFloat(args[7]);
+        long executionTime = Long.parseLong(args[8]);
+        String outputTxt = args[9];
+        String machine = args[10];
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off"); //"off", "trace", "debug", "info", "warn", "error".
