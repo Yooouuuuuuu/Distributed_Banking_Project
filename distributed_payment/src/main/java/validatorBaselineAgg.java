@@ -303,10 +303,8 @@ public class validatorBaselineAgg {
                         .setTransactions(listOfOrderInDetail)
                         .build();
 
-                producer.send(new ProducerRecord<String, Block>("order",
-                        orderIn.getTransactions().get(0).getInbankPartition(),
-                        orderIn.getTransactions().get(0).getInbank(),
-                        orderIn));
+                //we have to send UTXO records in the "validator" version around here,
+                //but since we sent the whole block before, it had already been done.
 
                 //just for testing, check if every UTXO is consumed.
                 UTXOCount += 1;

@@ -157,6 +157,7 @@ public class sortTimestamps {
             for (int i = 0; i < untested.size(); i += 3) {
                 averageLatency = averageLatency - Long.parseLong(untested.get(i+2));
             }
+            averageLatency = averageLatency / numOfPayments;
 
             //start writing to csv file
             BufferedWriter bw = new BufferedWriter(new FileWriter(outputCsv));
@@ -181,7 +182,7 @@ public class sortTimestamps {
             System.out.println("number of payments: " + numOfPayments);
             System.out.println("RPS: " + RPS);
             System.out.println("TPS: " + TPS);
-            System.out.println("mean value of latency: " + averageLatency);
+            System.out.println("mean value of latency: " + averageLatency + " ms");
 
         }
     }
