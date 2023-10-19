@@ -23,7 +23,7 @@ outputFile="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/tim
 
 #need to change for testing
 zipfExponent=1
-tokensPerSec=$2/2
+tokensPerSec=$2
 executionTime=10000
 
 #three source can use, sourceProducer, sourceProducerZipf, sourceProducerZipfRps
