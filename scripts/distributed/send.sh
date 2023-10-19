@@ -13,18 +13,20 @@ else
     schemaRegistryUrl="http://192.168.50.224:8081"
 fi
 
-mkdir -p /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/tokensPerSec$2
+
 
 numOfPartitions=2
 numOfAccounts=1000
 initBalance=100000000
 amountPerTransaction=1
-outputFile="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/tokensPerSec$2/RPS.txt"
 
 #need to change for testing
 zipfExponent=1
 tokensPerSec=$2
 executionTime=10000
+
+mkdir -p /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/tokensPerSec$((tokensPerSec*2))
+outputFile="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/tokensPerSec$((tokensPerSec*2))/RPS.txt"
 
 #three source can use, sourceProducer, sourceProducerZipf, sourceProducerZipfRps
 echo "machine $machine is inputing data and waiting for processes end"
