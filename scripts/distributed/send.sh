@@ -23,7 +23,7 @@ amountPerTransaction=1
 #need to change for testing
 zipfExponent=1
 tokensPerSec=$2
-executionTime=10000
+executionTime=$3
 
 mkdir -p /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/tokensPerSec$((tokensPerSec*2))
 outputFile="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/tokensPerSec$((tokensPerSec*2))/RPS.txt"

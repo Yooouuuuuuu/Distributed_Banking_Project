@@ -7,8 +7,9 @@
 #endMachine.sh
 #writeToCsv.sh machineNum tokensPerSec
 
-#
 validatorOrBaseline=baseline
+executionTime=100000
+waitTime=$((executionTime*0.02))
 
 #`seq 10000 10000 200000`
 for tokensPerSec in `seq 10000 10000 200000`
@@ -28,14 +29,14 @@ MACHINE1
 #open consumers 
 echo '=== open consumers ==='
 gnome-terminal -- ./runMachine1.sh 1 $validatorOrBaseline
-gnome-terminal -- ./runMachine2.sh 2 $validatorOrBaseline
+gnome-terminal -- ./runMachine2.sh 2 $validatorOrBaseline 
 sleep 30s
 
 #sending data
 echo '=== sending data ==='
-gnome-terminal -- ./sendMachine1.sh 1 $((tokensPerSec/2))
-gnome-terminal -- ./sendMachine2.sh 2 $((tokensPerSec/2))
-sleep 60s
+gnome-terminal -- ./sendMachine1.sh 1 $((tokensPerSec/2)) $executionTime
+gnome-terminal -- ./sendMachine2.sh 2 $((tokensPerSec/2)) $executionTime
+sleep $((waitTime))s
 
 #close consumers
 echo '=== close consumers ==='
