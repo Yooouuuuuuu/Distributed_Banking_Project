@@ -78,7 +78,7 @@ public class sortTimestamps {
                 latencyNum += 1;
                 bw.write(data[0] + "," + data[1] + "," + data[2] + "," + data[3] + "," + data[4] + "," + data[5]);//寫到新檔案中
             }
-            
+
             long lastUntested = 0;
             for (int i = 0; i < untested.size(); i += 3) {
                 long timeStamp = Long.parseLong(untested.get(i + 2));

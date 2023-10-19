@@ -19,7 +19,6 @@ outputTxt1="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/tim
 outputTxt2="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/tokensPerSec$2/OriginalData.txt"
 outputTxt3="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/tokensPerSec$2/UTXO.txt"
 outputTxt4="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/tokensPerSec$2/untested.txt"
-#inputTxt1="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/tokensPerSec$2/RPS.txt"
 outputcsv="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/tokensPerSec$2/orders.csv"
 logger="off" #"off", "trace", "debug", "info", "warn", "error"
 

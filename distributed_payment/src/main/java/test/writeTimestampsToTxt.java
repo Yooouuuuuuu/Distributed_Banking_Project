@@ -141,7 +141,7 @@ public class writeTimestampsToTxt {
 
     private static void consumerUTXO(String filename, long numOfTX) throws FileNotFoundException {
         long newNumber;
-        String type;
+        String type = "UTXO";
         PrintWriter writer = new PrintWriter(filename);
         long startTime = System.currentTimeMillis();
 
@@ -155,7 +155,6 @@ public class writeTimestampsToTxt {
                                     record.value().getTransactions().get(i).getOutbank() +
                                             record.value().getTransactions().get(i).getSerialNumber()
                             );
-                            type = "UTXO";
                             writer.println(newNumber);
                             writer.println(type);
                             writer.println(record.timestamp());
@@ -214,13 +213,15 @@ public class writeTimestampsToTxt {
         while (startTime + (numOfTX / 100) > System.currentTimeMillis()) { //might have to set bigger if input increase
             ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, Block> record : records) {
-                newNumber = newNumberMap.get(
-                        record.value().getTransactions().get(0).getOutbank() +
-                                record.value().getTransactions().get(0).getSerialNumber()
-                );
-                writer.println(newNumber);
-                writer.println(type);
-                writer.println(record.timestamp());
+                if (record.value().getTransactions().get(0).getCategory() == 0) {
+                    newNumber = newNumberMap.get(
+                            record.value().getTransactions().get(0).getOutbank() +
+                                    record.value().getTransactions().get(0).getSerialNumber()
+                    );
+                    writer.println(newNumber);
+                    writer.println(type);
+                    writer.println(record.timestamp());
+                }
             }
         }
         writer.flush();

@@ -7,7 +7,7 @@
 #endMachine.sh
 #writeToCsv.sh machineNum tokensPerSec
 
-for tokensPerSec in in `seq 10000 10000 100000` 
+for tokensPerSec in `seq 10000 10000 20000` 
 do
 #using machine 1 to initialize Kafka topics
 sshpass -p nsd ssh nsd@140.119.164.32 -p 9010 << MACHINE1
@@ -31,7 +31,7 @@ sleep 30s
 echo '=== sending data ==='
 gnome-terminal -- ./sendMachine1.sh 1 $tokensPerSec
 gnome-terminal -- ./sendMachine2.sh 2 $tokensPerSec
-sleep 300s
+sleep 60s
 
 #close consumers
 echo '=== close consumers ==='
