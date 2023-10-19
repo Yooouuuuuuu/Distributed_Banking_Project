@@ -7,7 +7,7 @@
 #endMachine.sh
 #writeToCsv.sh machineNum tokensPerSec
 
-for tokensPerSec in 10000
+for tokensPerSec in in `seq 10000 10000 100000` 
 do
 #using machine 1 to initialize Kafka topics
 sshpass -p nsd ssh nsd@140.119.164.32 -p 9010 << MACHINE1

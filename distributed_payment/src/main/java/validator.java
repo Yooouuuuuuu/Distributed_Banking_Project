@@ -504,7 +504,6 @@ public class validator {
                                 orderIn));
                     }
 
-
                     //update UTXO offset
                     lastOffsetOfUTXO.put(updatePartition, UTXORecord.offset());
                     String bank = partitionBank.get(updatePartition);
@@ -558,10 +557,10 @@ public class validator {
                 }
             }
         }
-
         //set other hashmaps (has been reset)
         partitionBank.put(outbankPartition, bankID);
         System.out.println("Poll from localBalance. Now in charge of: " + partitionBank + " (partition:bank)");
+
     }
 
 }

@@ -36,7 +36,6 @@ public class aggregatorForBaseline {
         String transactionalId = args[6];
         String log = args[7];
 
-
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log); //"off", "trace", "debug", "info", "warn", "error".
         InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl, numOfPartitions);

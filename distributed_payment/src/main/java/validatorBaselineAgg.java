@@ -27,7 +27,7 @@ public class validatorBaselineAgg {
     static HashMap<String, Long> bankBalance = new HashMap<String, Long>();
     static HashMap<Integer, String> partitionBank = new HashMap<Integer, String>();
     static long rejectedCount = 0;
-    static long UTXOCount = 0;
+    static long UTXOCount = 0; //only for testing
 
     public static void main(String[] args) throws Exception {
 
@@ -58,28 +58,20 @@ public class validatorBaselineAgg {
                     if (record.value().getTransactions().get(0).getCategory() != 2) {
                         ProcessBlocks(record.value(), orderMultiplePartition, UTXODirectAdd, orderSeparateSend);
 
-                    }else {
+                    } else {
                         //Category 2 means it is an initialize record for accounts' balance. Only do once when system start.
                         InitBank(record.value(), record, orderMultiplePartition);
                     }
                     consumerFromBlocks.commitSync();
                     producer.commitTransaction();
 
-                } catch (Exception e)  {
+                } catch (Exception e) {
                     producer.abortTransaction();
                     bankBalance = new HashMap<String, Long>();
                     partitionBank = new HashMap<>();
                     System.out.println("Tx aborted. Reset hashmaps. Exception: " + e.getMessage());
                 }
             }
-
-            //variables for testing
-            if (records.count() > 0) {
-                //System.out.println("----------------------------------------------------\n " + "poll interval: " + interval);
-                //System.out.println("poll count: " + pollCount + " poll size: " + records.count());
-                System.out.println("numbers of UTXO consumed: " + UTXOCount);
-            }
-
         }
     }
 
@@ -162,7 +154,6 @@ public class validatorBaselineAgg {
                     initBalance));
 
             if (orderMultiplePartition) {
-
                 Transaction initDetail = recordValue.getTransactions().get(i);
                 List<Transaction> listOfInitDetail = new ArrayList<Transaction>();
                 listOfInitDetail.add(initDetail);
@@ -242,72 +233,39 @@ public class validatorBaselineAgg {
                         currentBlock.getTransactions().get(i).getOutbankPartition(),
                         currentBlock.getTransactions().get(i).getOutAccount(),
                         newBalance));
-            } else if (currentBlock.getTransactions().get(i).getCategory() == 1) {
-                /*
-                //check if bankBalance exist
-                if (!bankBalance.containsKey(recordValue.getTransactions().get(i).getInAccount())) {
-                    PollFromLocalBalance(recordValue.getTransactions().get(i).getInbankPartition(),
-                            recordValue.getTransactions().get(i).getInbank());
-                }
 
-                 */
-
-                //add money to inbank
-                long UTXO = recordValue.getTransactions().get(i).getAmount();
-                bankBalance.compute(recordValue.getTransactions().get(i).getInAccount(), (key, value)
-                        -> value + UTXO);
-
-                // update "localBalance" topic
-                LocalBalance newBalance =
-                        new LocalBalance(bankBalance.get(recordValue.getTransactions().get(i).getInAccount()));
-                producer.send(new ProducerRecord<String, LocalBalance>("localBalance",
-                        recordValue.getTransactions().get(i).getInbankPartition(),
-                        recordValue.getTransactions().get(i).getInAccount(),
-                        newBalance));
-
-                //just for testing, check if every UTXO is consumed.
-                UTXOCount += 1;
-            }
-
-            //if the inbank account is in charge by this validator, add the money directly rather than sending UTXO
-            if (UTXODirectAdd && currentBlock.getTransactions().get(i).getCategory() == 0) {
+                //if the inbank account is in charge by this validator, add the money directly rather than sending UTXO
                 if (bankBalance.containsKey(currentBlock.getTransactions().get(i).getInAccount())) {
-
-                    //if (partitionBank.containsValue(currentBlock.getTransactions().get(i).getInbank())) {
                     bankBalance.compute(currentBlock.getTransactions().get(i).getInAccount(), (key, value)
                             -> value + withdraw);
 
                     // update "localBalance" topic
-                    LocalBalance newBalance =
+                    newBalance =
                             new LocalBalance(bankBalance.get(currentBlock.getTransactions().get(i).getInAccount()));
                     producer.send(new ProducerRecord<String, LocalBalance>("localBalance",
                             currentBlock.getTransactions().get(i).getInbankPartition(),
                             currentBlock.getTransactions().get(i).getInAccount(),
                             newBalance));
 
-                    // send to order topic if order records are separated (into in and out)
-                    if (orderSeparateSend) {
-                        Transaction orderInDetail = currentBlock.getTransactions().get(i);
+                    // send to order topic
+                    Transaction orderInDetail = currentBlock.getTransactions().get(i);
+                    orderInDetail.put("category", 1);
 
-                        //these are records similar to UTXO, while never really become one.
-                        //However, we consider them the same while reading order topic, thus change the cat to 1 (as UTXO)
-                        orderInDetail.put("category", 1);
+                    List<Transaction> listOfOrderInDetail = new ArrayList<Transaction>();
+                    listOfOrderInDetail.add(orderInDetail);
+                    Block orderIn = Block.newBuilder()
+                            .setTransactions(listOfOrderInDetail)
+                            .build();
 
-                        List<Transaction> listOfOrderInDetail = new ArrayList<Transaction>();
-                        listOfOrderInDetail.add(orderInDetail);
-                        Block orderIn = Block.newBuilder()
-                                .setTransactions(listOfOrderInDetail)
-                                .build();
-
-                        producer.send(new ProducerRecord<String, Block>("order",
-                                orderIn.getTransactions().get(0).getInbankPartition(),
-                                orderIn.getTransactions().get(0).getInbank(),
-                                orderIn));
-                    }
+                    producer.send(new ProducerRecord<String, Block>("order",
+                            orderIn.getTransactions().get(0).getInbankPartition(),
+                            orderIn.getTransactions().get(0).getInbank(),
+                            orderIn));
 
                 } else {
                     //send UTXO
                     Transaction UTXODetail = currentBlock.getTransactions().get(i);
+                    UTXODetail.put("category", 1);
                     List<Transaction> listOfUTXODetail = new ArrayList<Transaction>();
                     listOfUTXODetail.add(UTXODetail);
                     Block UTXOBlock = Block.newBuilder()
@@ -318,18 +276,43 @@ public class validatorBaselineAgg {
                             UTXOBlock.getTransactions().get(0).getInbank(),
                             UTXOBlock));
                 }
-            }else {
-                //send UTXO
-                Transaction UTXODetail = currentBlock.getTransactions().get(i);
-                List<Transaction> listOfUTXODetail = new ArrayList<Transaction>();
-                listOfUTXODetail.add(UTXODetail);
-                Block UTXOBlock = Block.newBuilder()
-                        .setTransactions(listOfUTXODetail)
+
+            } else if (currentBlock.getTransactions().get(i).getCategory() == 1) {
+                //check if bankBalance exist
+                if (!bankBalance.containsKey(recordValue.getTransactions().get(i).getInAccount())) {
+                    PollFromLocalBalance(recordValue.getTransactions().get(i).getInbankPartition(),
+                            recordValue.getTransactions().get(i).getInbank());
+                }
+
+                //add money to inbank
+                bankBalance.compute(recordValue.getTransactions().get(i).getInAccount(), (key, value)
+                        -> value + withdraw);
+
+                // update "localBalance" topic
+                LocalBalance newBalance =
+                        new LocalBalance(bankBalance.get(recordValue.getTransactions().get(i).getInAccount()));
+                producer.send(new ProducerRecord<String, LocalBalance>("localBalance",
+                        recordValue.getTransactions().get(i).getInbankPartition(),
+                        recordValue.getTransactions().get(i).getInAccount(),
+                        newBalance));
+
+                Transaction orderInDetail = recordValue.getTransactions().get(i);
+                List<Transaction> listOfOrderInDetail = new ArrayList<Transaction>();
+                listOfOrderInDetail.add(orderInDetail);
+                Block orderIn = Block.newBuilder()
+                        .setTransactions(listOfOrderInDetail)
                         .build();
-                producer.send(new ProducerRecord<String, Block>("transactions",
-                        UTXOBlock.getTransactions().get(0).getInbankPartition(),
-                        UTXOBlock.getTransactions().get(0).getInbank(),
-                        UTXOBlock));
+
+                producer.send(new ProducerRecord<String, Block>("order",
+                        orderIn.getTransactions().get(0).getInbankPartition(),
+                        orderIn.getTransactions().get(0).getInbank(),
+                        orderIn));
+
+                //just for testing, check if every UTXO is consumed.
+                UTXOCount += 1;
+                if (UTXOCount % 10000 == 0) {
+                    System.out.println("numbers of UTXO consumed: " + UTXOCount);
+                }
             }
         }
 
