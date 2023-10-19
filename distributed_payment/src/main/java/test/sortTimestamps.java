@@ -139,7 +139,7 @@ public class sortTimestamps {
                 }
             }
 
-            long lastUTXO = 9999999999999L;
+            long lastUTXO = 0;
             for (int i = 0; i < UTXO.size(); i += 3) {
                 if (lastUTXO < Long.parseLong(UTXO.get(i+2))) {
                     lastUTXO = Long.parseLong(UTXO.get(i+2));
