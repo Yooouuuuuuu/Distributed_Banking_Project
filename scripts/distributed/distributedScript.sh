@@ -7,12 +7,12 @@
 #endMachine.sh
 #writeToCsv.sh machineNum tokensPerSec
 
-validatorOrBaseline=baseline
-executionTime=100000
-waitTime=$((executionTime*0.02))
+validatorOrBaseline=validator #validator or baseline
+executionTime=20000
+waitTime=$((executionTime/450))
 
 #`seq 10000 10000 200000`
-for tokensPerSec in `seq 10000 10000 200000`
+for tokensPerSec in `seq 100000 10000 200000`
 do
 #using machine 1 to initialize Kafka topics
 sshpass -p nsd ssh nsd@140.119.164.32 -p 9010 << MACHINE1

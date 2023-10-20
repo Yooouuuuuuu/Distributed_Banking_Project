@@ -95,48 +95,52 @@ public class writeTimestampsToTxt {
         long startTime = System.currentTimeMillis();
 
 
-        while (startTime + (numOfTX / 100) > System.currentTimeMillis()) { //might have to set bigger if input increase
-            ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
-            for (ConsumerRecord<String, Block> record : records) {
-                for (int i = 0; i < record.value().getTransactions().size(); i++) {
-                    if (record.value().getTransactions().get(i).getSerialNumber() != 0L) {
-                        if (record.value().getTransactions().get(i).getCategory() == 0) { //as original data
-                            newNumber = count;
-                            newNumberMap.put(
-                                    record.value().getTransactions().get(i).getOutbank() +
-                                            record.value().getTransactions().get(i).getSerialNumber(),
-                                    count);
-                            type = "successful";
-                            writer.println(newNumber);
-                            writer.println(type);
-                            writer.println(record.timestamp());
-                            //Since we will use multiple sourceProducer in different machine to simulate individual
-                            //banks sending request (in the same sourceProducer, the outBanks will also be the same).
-                            //However, this makes transactions' serial number not unique, we have to give them
-                            //new number to calculate latency later.
+        try {
+            while (startTime + (numOfTX / 100) > System.currentTimeMillis()) { //might have to set bigger if input increase
+                ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
+                for (ConsumerRecord<String, Block> record : records) {
+                    for (int i = 0; i < record.value().getTransactions().size(); i++) {
+                        if (record.value().getTransactions().get(i).getSerialNumber() != 0L) {
+                            if (record.value().getTransactions().get(i).getCategory() == 0) { //as original data
+                                newNumber = count;
+                                newNumberMap.put(
+                                        record.value().getTransactions().get(i).getOutbank() +
+                                                record.value().getTransactions().get(i).getSerialNumber(),
+                                        count);
+                                type = "successful";
+                                writer.println(newNumber);
+                                writer.println(type);
+                                writer.println(record.timestamp());
+                                //Since we will use multiple sourceProducer in different machine to simulate individual
+                                //banks sending request (in the same sourceProducer, the outBanks will also be the same).
+                                //However, this makes transactions' serial number not unique, we have to give them
+                                //new number to calculate latency later.
 
-                            //The first 3 letters of the key represent the outBank of the tx,
-                            //after that is its original serial number.
-                            count += 1;
-                        } else if (record.value().getTransactions().get(i).getCategory() == 0) {
-                            newNumber = count;
-                            newNumberMap.put(
-                                    record.value().getTransactions().get(i).getOutbank() +
-                                            record.value().getTransactions().get(i).getSerialNumber(),
-                                    count);
-                            type = "rejected";
-                            writer.println(newNumber);
-                            writer.println(type);
-                            writer.println(record.timestamp());
+                                //The first 3 letters of the key represent the outBank of the tx,
+                                //after that is its original serial number.
+                                count += 1;
+                            } else if (record.value().getTransactions().get(i).getCategory() == 0) {
+                                newNumber = count;
+                                newNumberMap.put(
+                                        record.value().getTransactions().get(i).getOutbank() +
+                                                record.value().getTransactions().get(i).getSerialNumber(),
+                                        count);
+                                type = "rejected";
+                                writer.println(newNumber);
+                                writer.println(type);
+                                writer.println(record.timestamp());
+                            }
                         }
                     }
                 }
             }
-        }
 
-        writer.flush();
-        writer.close();
-        System.out.println(filename + " is written complete.");
+            writer.flush();
+            writer.close();
+            System.out.println(filename + " is written complete.");
+        } catch(Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     private static void consumerUTXO(String filename, long numOfTX) throws FileNotFoundException {
@@ -145,63 +149,70 @@ public class writeTimestampsToTxt {
         PrintWriter writer = new PrintWriter(filename);
         long startTime = System.currentTimeMillis();
 
-        while (startTime + (numOfTX / 100) > System.currentTimeMillis()) { //might have to set bigger if input increase
-            ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
-            for (ConsumerRecord<String, Block> record : records) {
-                for (int i = 0; i < record.value().getTransactions().size(); i++) {
-                    if (record.value().getTransactions().get(i).getSerialNumber() != 0L) {
-                        if (record.value().getTransactions().get(i).getCategory() == 1) { //as UTXO
-                            newNumber = newNumberMap.get(
-                                    record.value().getTransactions().get(i).getOutbank() +
-                                            record.value().getTransactions().get(i).getSerialNumber()
-                            );
-                            writer.println(newNumber);
-                            writer.println(type);
-                            writer.println(record.timestamp());
+        try {
+            while (startTime + (numOfTX / 100) > System.currentTimeMillis()) { //might have to set bigger if input increase
+                ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
+                for (ConsumerRecord<String, Block> record : records) {
+                    for (int i = 0; i < record.value().getTransactions().size(); i++) {
+                        if (record.value().getTransactions().get(i).getSerialNumber() != 0L) {
+                            if (record.value().getTransactions().get(i).getCategory() == 1) { //as UTXO
+                                newNumber = newNumberMap.get(
+                                        record.value().getTransactions().get(i).getOutbank() +
+                                                record.value().getTransactions().get(i).getSerialNumber()
+                                );
+                                writer.println(newNumber);
+                                writer.println(type);
+                                writer.println(record.timestamp());
+                            }
                         }
                     }
                 }
             }
+            writer.flush();
+            writer.close();
+            System.out.println(filename + " is written complete.");
+        } catch(Exception e) {
+            System.out.println(e.getMessage());
         }
-        writer.flush();
-        writer.close();
-        System.out.println(filename + " is written complete.");
     }
 
     private static void findFirstTimestamp(String filename, long numOfTX) throws FileNotFoundException {
         long timeout = System.currentTimeMillis() + 10000;
         long firstRecordTime = 9999999999999L;
 
-        while (true) {
-            ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
-            for (ConsumerRecord<String, Block> record : records) {
-                for (int i = 0; i < record.value().getTransactions().size(); i++) {
-                    if (record.value().getTransactions().get(i).getSerialNumber() == 1) {
-                        //there might have more than one data which SerialNumber() == 1
-                        // if there are more than one generator
-                        if (firstRecordTime > record.timestamp()) {
-                            firstRecordTime = record.timestamp();
+        try {
+            while (true) {
+                ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
+                for (ConsumerRecord<String, Block> record : records) {
+                    for (int i = 0; i < record.value().getTransactions().size(); i++) {
+                        if (record.value().getTransactions().get(i).getSerialNumber() == 1) {
+                            //there might have more than one data which SerialNumber() == 1
+                            // if there are more than one generator
+                            if (firstRecordTime > record.timestamp()) {
+                                firstRecordTime = record.timestamp();
+                            }
                         }
+                        //System.out.println(record.value().getTransactions().get(i));
+                        timeout = System.currentTimeMillis();
                     }
-                    //System.out.println(record.value().getTransactions().get(i));
-                    timeout = System.currentTimeMillis();
+                }
+                if (System.currentTimeMillis() > timeout) {
+                    break;
                 }
             }
-            if (System.currentTimeMillis() > timeout) {
-                break;
-            }
+
+            PrintWriter writer = new PrintWriter(filename);
+
+            writer.println("first timestamp of transactions topic");
+            writer.println(firstRecordTime);
+
+            writer.flush();
+            writer.close();
+
+            System.out.println(filename + " is written complete.");
+        } catch(Exception e) {
+            System.out.println(e.getMessage());
         }
-
-        PrintWriter writer = new PrintWriter(filename);
-
-        writer.println("first timestamp of transactions topic");
-        writer.println(firstRecordTime);
-
-        writer.flush();
-        writer.close();
-
-        System.out.println(filename + " is written complete.");
-
     }
 
     private static void consumerUntested(String filename, long numOfTX) throws FileNotFoundException {
@@ -210,24 +221,27 @@ public class writeTimestampsToTxt {
         PrintWriter writer = new PrintWriter(filename);
         long startTime = System.currentTimeMillis();
 
-        while (startTime + (numOfTX / 100) > System.currentTimeMillis()) { //might have to set bigger if input increase
-            ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
-            for (ConsumerRecord<String, Block> record : records) {
-                if (record.value().getTransactions().get(0).getCategory() == 0) {
-                    newNumber = newNumberMap.get(
-                            record.value().getTransactions().get(0).getOutbank() +
-                                    record.value().getTransactions().get(0).getSerialNumber()
-                    );
-                    writer.println(newNumber);
-                    writer.println(type);
-                    writer.println(record.timestamp());
+        try {
+            while (startTime + (numOfTX / 100) > System.currentTimeMillis()) { //might have to set bigger if input increase
+                ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
+                for (ConsumerRecord<String, Block> record : records) {
+                    if (record.value().getTransactions().get(0).getCategory() == 0) {
+                        newNumber = newNumberMap.get(
+                                record.value().getTransactions().get(0).getOutbank() +
+                                        record.value().getTransactions().get(0).getSerialNumber()
+                        );
+                        writer.println(newNumber);
+                        writer.println(type);
+                        writer.println(record.timestamp());
+                    }
                 }
             }
+            writer.flush();
+            writer.close();
+            System.out.println(filename + " is written complete.");
+        } catch(Exception e) {
+            System.out.println(e.getMessage());
         }
-        writer.flush();
-        writer.close();
-        System.out.println(filename + " is written complete.");
-
     }
 
 }
