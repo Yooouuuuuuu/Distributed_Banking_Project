@@ -119,7 +119,7 @@ public class writeTimestampsToTxt {
                                 //The first 3 letters of the key represent the outBank of the tx,
                                 //after that is its original serial number.
                                 count += 1;
-                            } else if (record.value().getTransactions().get(i).getCategory() == 0) {
+                            } else if (record.value().getTransactions().get(i).getCategory() == 3) {
                                 newNumber = count;
                                 newNumberMap.put(
                                         record.value().getTransactions().get(i).getOutbank() +

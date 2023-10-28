@@ -24,7 +24,7 @@ logger="off" #"off", "trace", "debug", "info", "warn", "error"
 
 #need to change for testing
 tokensPerSec=$2;
-executionTime=10000;
+executionTime=$3;
 
 echo "consume transactions -- write firstTimestamp, OriginalData & UTXO to txt files" 
 #100000 is the roughly number of data, use to decide how long we should wait until polling finish. no need to be the exact number of data.
