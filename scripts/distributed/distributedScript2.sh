@@ -9,7 +9,7 @@
 
 validatorOrBaseline=baseline #validator or baseline
 executionTime=1000000
-waitTime=600000
+waitTime=60
 
 #`seq 10000 10000 200000`
 for tokensPerSec in `seq 10000 10000 200000`
