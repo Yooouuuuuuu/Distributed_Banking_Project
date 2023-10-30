@@ -30,7 +30,7 @@ outputFile="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/tim
 
 #three source can use, sourceProducer, sourceProducerZipf, sourceProducerZipfRps
 echo "machine $machine is inputing data and waiting for processes end"
-java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar sourceProducer $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $initBalance $amountPerTransaction $zipfExponent $tokensPerSec $executionTime $outputFile $machine
+gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar sourceProducer $bootstrapServers $schemaRegistryUrl $numOfPartitions $numOfAccounts $initBalance $amountPerTransaction $zipfExponent $tokensPerSec $executionTime $outputFile $machine
 
 echo -e "\nEnd. "
 
