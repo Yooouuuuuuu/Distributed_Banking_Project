@@ -9,12 +9,12 @@
 
 validatorOrBaseline=baseline #validator or baseline
 executionTime=1000000
-waitTime=60
+waitTime=10
 
 #`seq 10000 10000 200000`
-for tokensPerSec in `seq 10000 10000 200000`
+for tokensPerSec in 300000
 do
-echo '=== RPS: $tokensPerSec ===' 
+echo '=== RPS: '$tokensPerSec' ===' 
 #using machine 1 to initialize Kafka topics
 sshpass -p nsd ssh nsd@140.119.164.32 -p 9010 << MACHINE1
 echo '=== Access into machine 1 (port:9010) ==='
@@ -43,17 +43,20 @@ sleep $((waitTime))s
 echo '=== close consumers ==='
 gnome-terminal -- ./endMachine1.sh
 gnome-terminal -- ./endMachine2.sh
+sleep 5s
 
+echo "=== calculate TPS ===" 
 #read and sort timestamps
 sshpass -p nsd ssh nsd@140.119.164.32 -p 9011 << MACHINE2
-echo '=== Access into machine 2 (port:9011) ==='
+echo 'Access into machine 2 (port:9011)'
 
 cd /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/distributed
-./TPS.sh 2 $tokensPerSec
+./TPS.sh
 
-echo '=== Exit machine 2 (port:9011) ==='
+echo 'Exit machine 2 (port:9011)'
 exit
 MACHINE2
+
 done
 
 
