@@ -56,7 +56,8 @@ public class tps {
         findFirstTimestamp();
         consumer.close();
 
-        calculateTPS();
+        float TPS = (float) (numOfPayments / ((lastUTXOTime - firstRecordTime) / 1000));
+        System.out.println("num of payments done: " + numOfPayments + "\nTPS: " + TPS);
     }
 
     private static void consumeOriginal() {
