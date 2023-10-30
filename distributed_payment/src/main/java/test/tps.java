@@ -5,13 +5,11 @@ import my.avroSchema.Block;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.simple.SimpleLogger;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -40,91 +38,48 @@ public class tps {
         props.setProperty("specific.avro.reader", "true");
 
         //order topic, record the timestamps of original and UTXO separately
-        /*
         String inputTopic = "order";
         consumer =
                 new KafkaConsumer<String, Block>(props);
         consumer.subscribe(Collections.singletonList(inputTopic));
-
-         */
-
         consumeLast();
         consumer.close();
 
-
-
         //transaction topic, find the timestamp of the first data
-        String inputTopic = "transactions";
+        inputTopic = "transactions";
         consumer =
                 new KafkaConsumer<String, Block>(props);
         consumer.subscribe(Collections.singleton(inputTopic));
         findFirstTimestamp();
         consumer.close();
 
-        float TPS = (float) (numOfPayments / ((lastUTXOTime - firstRecordTime) / 1000));
-        System.out.println("num of payments done: " + numOfPayments + "\nTPS: " + TPS);
+        calculateTPS();
     }
 
     private static void consumeLast() {
-        TopicPartition partition0 = new TopicPartition("order", 0);
-        consumer.assign(List.of(partition0));
-        long latestOffset = consumer.position(partition0);
-        consumer.seekToEnd(Collections.singleton(partition0));
-        long lastOffset = consumer.position(partition0);
+        long startTime = System.currentTimeMillis();
 
         try {
-            while (lastOffset - latestOffset > 0) {
+            while (startTime + (100000) > System.currentTimeMillis()) { //100s
                 ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<String, Block> record : records) {
                     if (record.timestamp() > lastUTXOTime) {
                         lastUTXOTime = record.timestamp();
                     }
-                    latestOffset += 1;
-
+                    /*
                     for (int i = 0; i < record.value().getTransactions().size(); i++) {
                         if (record.value().getTransactions().get(i).getCategory() == 1) {
                             numOfPayments += 1;
                         }
                     }
 
+                     */
                 }
             }
         } catch(Exception e) {
             System.out.println(e.getMessage());
         }
-
-
-        TopicPartition partition1 = new TopicPartition("order", 1);
-        consumer.assign(List.of(partition1));
-        latestOffset = consumer.position(partition1);
-        consumer.seekToEnd(Collections.singleton(partition1));
-        lastOffset = consumer.position(partition1);
-
-        try {
-            while (lastOffset - latestOffset > 0) {
-                ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
-                for (ConsumerRecord<String, Block> record : records) {
-                    if (record.timestamp() > lastUTXOTime) {
-                        lastUTXOTime = record.timestamp();
-                    }
-                    latestOffset += 1;
-
-                    for (int i = 0; i < record.value().getTransactions().size(); i++) {
-                        if (record.value().getTransactions().get(i).getCategory() == 1) {
-                            numOfPayments += 1;
-                        }
-                    }
-
-                }
-            }
-        } catch(Exception e) {
-            System.out.println(e.getMessage());
-        }
-
     }
-
-
-
 
 
     private static void findFirstTimestamp() {
