@@ -15,9 +15,8 @@ import java.util.UUID;
 
 public class tps {
     static KafkaConsumer<String, Block> consumer;
-    static long firstRecordTime = 9999999999999L;
-    static long lastUTXOTime = 0L;
-    static long numOfPayments = 0L;
+    static long numOfTrades = 0L;
+    static long numOfTradesComplete = 0L;
 
 
 
@@ -25,6 +24,8 @@ public class tps {
 
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
+        int executeTime = Integer.parseInt(args[2]);
+
 
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off");//"off", "trace", "debug", "info", "warn", "error"
         Properties props = new Properties();
@@ -42,8 +43,10 @@ public class tps {
         consumer =
                 new KafkaConsumer<String, Block>(props);
         consumer.subscribe(Collections.singletonList(inputTopic));
-        consumeLast();
+        lastCredit();
         consumer.close();
+
+
 
         //transaction topic, find the timestamp of the first data
         inputTopic = "transactions";
@@ -53,29 +56,27 @@ public class tps {
         findFirstTimestamp();
         consumer.close();
 
-        calculateTPS();
+        float RPS = (float) (numOfTrades / executeTime);
+        System.out.println("num of trade: " + numOfTrades + "\nTPS: " + RPS);
+        float TPS = (float) (numOfTradesComplete / executeTime);
+        System.out.println("num of trade complete: " + numOfTradesComplete + "\nTPS: " + TPS);
+
     }
 
-    private static void consumeLast() {
-        long startTime = System.currentTimeMillis();
+    private static void lastCredit() {
+        long timeout = System.currentTimeMillis() + 100000; //100s;
 
         try {
-            while (startTime + (100000) > System.currentTimeMillis()) { //100s
+            do {
                 ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<String, Block> record : records) {
-                    if (record.timestamp() > lastUTXOTime) {
-                        lastUTXOTime = record.timestamp();
-                    }
-                    /*
                     for (int i = 0; i < record.value().getTransactions().size(); i++) {
                         if (record.value().getTransactions().get(i).getCategory() == 1) {
-                            numOfPayments += 1;
+                            numOfTradesComplete += 1;
                         }
                     }
-
-                     */
                 }
-            }
+            } while (System.currentTimeMillis() <= timeout);
         } catch(Exception e) {
             System.out.println(e.getMessage());
         }
@@ -83,36 +84,24 @@ public class tps {
 
 
     private static void findFirstTimestamp() {
-        long timeout = System.currentTimeMillis() + 10000;
+        long timeout = System.currentTimeMillis() + 100000; //100s;
 
         try {
-            while (true) {
+            do {
                 ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<String, Block> record : records) {
                     for (int i = 0; i < record.value().getTransactions().size(); i++) {
-                        if (record.value().getTransactions().get(i).getSerialNumber() == 1) {
-                            //there might have more than one data which SerialNumber() == 1
-                            // if there are more than one generator
-                            if (firstRecordTime > record.timestamp()) {
-                                firstRecordTime = record.timestamp();
-                            }
+                        if (record.value().getTransactions().get(i).getCategory() == 0) {
+                            numOfTrades += 1;
                         }
                         //System.out.println(record.value().getTransactions().get(i));
                         timeout = System.currentTimeMillis();
                     }
                 }
-                if (System.currentTimeMillis() > timeout) {
-                    break;
-                }
-            }
+            } while (System.currentTimeMillis() <= timeout);
         } catch(Exception e) {
             System.out.println(e.getMessage());
         }
-    }
-
-    private static void calculateTPS() {
-        float TPS = (float) (numOfPayments / ((lastUTXOTime - firstRecordTime) / 1000));
-        System.out.println("num of payments done: " + numOfPayments + "\nTPS: " + TPS);
     }
 
 }

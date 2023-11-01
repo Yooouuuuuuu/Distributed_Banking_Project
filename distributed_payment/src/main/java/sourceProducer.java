@@ -31,7 +31,7 @@ public class sourceProducer {
         String machine = args[10];
 
         //setups
-        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off"); //"off", "trace", "debug", "info", "warn", "error".
+        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "info"); //"off", "trace", "debug", "info", "warn", "error".
 
         //create producer
         Properties properties = new Properties();
