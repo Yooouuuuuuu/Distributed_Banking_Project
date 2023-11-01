@@ -32,6 +32,8 @@ public class tps {
         props.put("bootstrap.servers", bootstrapServers);
         props.put("group.id", UUID.randomUUID().toString());
         props.put("auto.offset.reset", "earliest");
+        props.put("max.poll.records", 10000);
+
 
         props.setProperty("key.deserializer", StringDeserializer.class.getName());
         props.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
@@ -57,7 +59,7 @@ public class tps {
         consumer.close();
 
         float RPS = (float) (numOfTrades / executeTime);
-        System.out.println("num of trade: " + numOfTrades + "\nTPS: " + RPS);
+        System.out.println("num of trade: " + numOfTrades + "\nRPS: " + RPS);
         float TPS = (float) (numOfTradesComplete / executeTime);
         System.out.println("num of trade complete: " + numOfTradesComplete + "\nTPS: " + TPS);
 
@@ -84,7 +86,7 @@ public class tps {
 
 
     private static void findFirstTimestamp() {
-        long timeout = System.currentTimeMillis() + 100000; //100s;
+        long timeout = System.currentTimeMillis() + 600000; //100s;
 
         try {
             do {
@@ -94,7 +96,6 @@ public class tps {
                         if (record.value().getTransactions().get(i).getCategory() == 0) {
                             numOfTrades += 1;
                         }
-                        //System.out.println(record.value().getTransactions().get(i));
                         timeout = System.currentTimeMillis();
                     }
                 }
