@@ -61,16 +61,16 @@ public class tpsAndLatency {
         long timeout = System.currentTimeMillis() + 100000; //100s;
 
         try {
-            while (true) {
+            do {
                 ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<String, Block> record : records) {
                     for (int i = 0; i < record.value().getTransactions().size(); i++) {
                         if (record.value().getTransactions().get(i).getCategory() == 1) {
-                            latency.add(record.timestamp()-record.value().getTransactions().get(i).getTimestamp1());
+                            latency.add(record.timestamp() - record.value().getTransactions().get(i).getTimestamp1());
                         }
                     }
                 }
-            }
+            } while (System.currentTimeMillis() <= timeout);
         } catch(Exception e) {
             System.out.println(e.getMessage());
         }

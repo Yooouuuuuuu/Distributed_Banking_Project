@@ -113,7 +113,7 @@ public class sourceProducer {
                     bankList.indexOf(outBank),
                     bankList.indexOf(inBank),
                     amountPerTransaction,
-                    0, null, null);
+                    0, 0L, 0L);
             List<Transaction> listOfDetail = new ArrayList<Transaction>();
             listOfDetail.add(detail);
             Block output = Block.newBuilder()
