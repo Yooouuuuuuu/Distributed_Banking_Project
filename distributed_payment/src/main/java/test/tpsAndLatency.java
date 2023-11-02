@@ -15,13 +15,11 @@ public class tpsAndLatency {
     static KafkaConsumer<String, Block> consumer;
     static List<Long> latency = new ArrayList<>();
 
-
     public static void main(String[] args) throws Exception {
 
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
         int executeTime = Integer.parseInt(args[2]);
-
 
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off");//"off", "trace", "debug", "info", "warn", "error"
         Properties props = new Properties();
@@ -29,7 +27,6 @@ public class tpsAndLatency {
         props.put("group.id", UUID.randomUUID().toString());
         props.put("auto.offset.reset", "earliest");
         props.put("max.poll.records", 1000);
-
 
         props.setProperty("key.deserializer", StringDeserializer.class.getName());
         props.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
@@ -51,9 +48,8 @@ public class tpsAndLatency {
 
         System.out.println("num of trade complete: " + numOfTradesComplete +
                 "\nTPS: " + TPS +
-                "\n95% latency: " + latency.get(Math.toIntExact(ninetyFivePercent))
+                "\ntop 95% latency: " + latency.get(Math.toIntExact(ninetyFivePercent))
                 );
-
 
     }
 
@@ -75,8 +71,5 @@ public class tpsAndLatency {
             System.out.println(e.getMessage());
         }
     }
-
-
-
 
 }

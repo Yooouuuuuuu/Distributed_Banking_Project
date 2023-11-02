@@ -7,7 +7,7 @@
 #endMachine.sh
 #writeToCsv.sh machineNum tokensPerSec
 
-validatorOrBaseline=validator #validator or baseline
+validatorOrBaseline=baseline #validator or baseline
 executionTime=1000000
 waitTime=300
 

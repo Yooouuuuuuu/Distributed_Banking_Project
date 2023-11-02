@@ -513,7 +513,7 @@ public class validator {
                     Transaction detail = new Transaction(-1L,
                             bank, bank, bank, bank,
                             updatePartition, updatePartition,
-                            lastOffsetOfUTXO.get(updatePartition), 3, null, null);
+                            lastOffsetOfUTXO.get(updatePartition), 3, 0L, 0L);
                     List<Transaction> listOfDetail = new ArrayList<Transaction>();
                     listOfDetail.add(detail);
                     Block offsetBlock = Block.newBuilder()
