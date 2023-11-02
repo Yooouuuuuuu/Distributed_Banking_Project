@@ -110,7 +110,10 @@ public class sourceProducer {
             Transaction detail = new Transaction(serialNumber,
                     outBank, outAccount,
                     inBank, inAccount,
-                    bankList.indexOf(outBank), bankList.indexOf(inBank), amountPerTransaction, 0);
+                    bankList.indexOf(outBank),
+                    bankList.indexOf(inBank),
+                    amountPerTransaction,
+                    0, null, null);
             List<Transaction> listOfDetail = new ArrayList<Transaction>();
             listOfDetail.add(detail);
             Block output = Block.newBuilder()

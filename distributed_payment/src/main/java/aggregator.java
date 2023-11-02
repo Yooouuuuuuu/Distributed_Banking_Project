@@ -130,6 +130,7 @@ public class aggregator {
         partitionOffset.put(record.partition(), record.offset());
 
         //add transaction to current block
+        recordValue.getTransactions().get(0).put("timestamp1", record.timestamp());
         listOfListOfTransactions.get(recordValue.getTransactions().get(0).getOutbankPartition()).add(recordValue.getTransactions().get(0));
 
     }

@@ -157,7 +157,7 @@ public class initialize {
                     Transaction detail = new Transaction(0L,
                             "10" + partitionNum, "10" + partitionNum + "000" + accountNum,
                             "10" + partitionNum, "10" + partitionNum + "000" + accountNum,
-                            partitionNum, partitionNum, initBalance, 2);
+                            partitionNum, partitionNum, initBalance, 2, null, null);
                     listOfDetail.add(detail);
 
                     // save account info to
@@ -168,7 +168,7 @@ public class initialize {
                     Transaction detail = new Transaction(0L,
                             "10" + partitionNum, "10" + partitionNum + "00" + accountNum,
                             "10" + partitionNum, "10" + partitionNum + "00" + accountNum,
-                            partitionNum, partitionNum, initBalance, 2);
+                            partitionNum, partitionNum, initBalance, 2, null, null);
                     listOfDetail.add(detail);
 
                     Account account = new Account("10" + partitionNum + "00" + accountNum);
@@ -177,7 +177,7 @@ public class initialize {
                     Transaction detail = new Transaction(0L,
                             "10" + partitionNum, "10" + partitionNum + "0" + accountNum,
                             "10" + partitionNum, "10" + partitionNum + "0" + accountNum,
-                            partitionNum, partitionNum, initBalance, 2);
+                            partitionNum, partitionNum, initBalance, 2, null, null);
                     listOfDetail.add(detail);
 
                     Account account = new Account("10" + partitionNum + "0" + accountNum);
@@ -186,7 +186,7 @@ public class initialize {
                     Transaction detail = new Transaction(0L,
                             "10" + partitionNum, "10" + partitionNum + accountNum,
                             "10" + partitionNum, "10" + partitionNum + accountNum,
-                            partitionNum, partitionNum, initBalance, 2);
+                            partitionNum, partitionNum, initBalance, 2, null, null);
                     listOfDetail.add(detail);
 
                     Account account = new Account("10" + partitionNum + accountNum);

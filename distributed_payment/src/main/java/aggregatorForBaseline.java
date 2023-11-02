@@ -144,6 +144,7 @@ public class aggregatorForBaseline {
                     listOfCounts.get(recordValue.getTransactions().get(0).getOutbankPartition()) + 1);
             partitionOffset.put(record.partition(), record.offset());
             //add transaction to current block
+            recordValue.getTransactions().get(0).put("timestamp1", record.timestamp());
             listOfListOfTransactions.get(recordValue.getTransactions().get(0).getOutbankPartition()).add(recordValue.getTransactions().get(0));
         }else if (recordValue.getTransactions().get(0).getCategory() == 1){
             //bank time init if not exist
@@ -156,6 +157,7 @@ public class aggregatorForBaseline {
                     listOfCounts.get(recordValue.getTransactions().get(0).getInbankPartition()) + 1);
             partitionOffset.put(record.partition(), record.offset());
             //add transaction to current block
+            recordValue.getTransactions().get(0).put("timestamp2", record.timestamp());
             listOfListOfTransactions.get(recordValue.getTransactions().get(0).getInbankPartition()).add(recordValue.getTransactions().get(0));
         }
     }

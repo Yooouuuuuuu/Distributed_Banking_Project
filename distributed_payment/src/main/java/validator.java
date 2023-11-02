@@ -79,7 +79,7 @@ public class validator {
                                 //As outbank, withdraw money and create UTXO for inbank. Category 0 means it is a raw transaction.
                                 if (record.value().getTransactions().get(0).getCategory() == 0) {
                                     try {
-                                        ProcessBlocks(record.value(), orderMultiplePartition, UTXODirectAdd, orderSeparateSend);
+                                        ProcessBlocks(record.value(), record.timestamp(), orderMultiplePartition, UTXODirectAdd, orderSeparateSend);
                                         transactionCounts += record.value().getTransactions().size();
                                         //System.out.println("transaction counts: " + transactionCounts);
 
@@ -271,6 +271,7 @@ public class validator {
 
 
     private static void ProcessBlocks(Block recordValue,
+                                      long timestamp,
                                       boolean orderMultiplePartition,
                                       boolean UTXODirectAdd,
                                       boolean orderSeparateSend)
@@ -296,6 +297,7 @@ public class validator {
                 System.out.printf("Transaction No.%d cancelled.%n " + rejectedCount + " rejected.\n"
                         , recordValue.getTransactions().get(i).getSerialNumber());
             }
+
         }
 
         //send to order topic
@@ -351,7 +353,7 @@ public class validator {
                         //these are records similar to UTXO, while never really become one.
                         //However, we consider them the same while reading order topic, thus change the cat to 1 (as UTXO)
                         orderInDetail.put("category", 1);
-
+                        orderInDetail.put("timestamp2", timestamp);
                         List<Transaction> listOfOrderInDetail = new ArrayList<Transaction>();
                         listOfOrderInDetail.add(orderInDetail);
                         Block orderIn = Block.newBuilder()
@@ -491,6 +493,7 @@ public class validator {
                     if (orderSeparateSend) {
                         Transaction orderInDetail = UTXORecord.value().getTransactions().get(0);
                         orderInDetail.put("category", 1);
+                        orderInDetail.put("timestamp2", UTXORecord.timestamp());
 
                         List<Transaction> listOfOrderInDetail = new ArrayList<Transaction>();
                         listOfOrderInDetail.add(orderInDetail);
@@ -510,7 +513,7 @@ public class validator {
                     Transaction detail = new Transaction(-1L,
                             bank, bank, bank, bank,
                             updatePartition, updatePartition,
-                            lastOffsetOfUTXO.get(updatePartition), 3);
+                            lastOffsetOfUTXO.get(updatePartition), 3, null, null);
                     List<Transaction> listOfDetail = new ArrayList<Transaction>();
                     listOfDetail.add(detail);
                     Block offsetBlock = Block.newBuilder()
