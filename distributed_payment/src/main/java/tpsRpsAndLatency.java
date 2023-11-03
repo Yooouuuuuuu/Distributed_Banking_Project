@@ -1,5 +1,3 @@
-package test;
-
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import my.avroSchema.Block;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

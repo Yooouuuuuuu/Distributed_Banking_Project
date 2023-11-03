@@ -14,7 +14,7 @@ import org.slf4j.simple.SimpleLogger;
 import java.time.Duration;
 import java.util.*;
 
-public class aggregatorForBaseline {
+public class aggregatorBaseline {
 
     static KafkaConsumer<String, Block> consumerFromTransactions;
     static Producer<String, Block> producer;
@@ -115,7 +115,7 @@ public class aggregatorForBaseline {
                             listOfListOfTransactions.add(listOfTransactions);
                             listOfCounts.add(0);
                         }
-                        System.out.println("aggregator is rebalanced. Initialize lists of blocks and counts.");
+                        System.out.println("aggregator(Baseline) is rebalanced. Initialize lists of blocks and counts.");
                     }});
     }
 

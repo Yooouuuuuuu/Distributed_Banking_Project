@@ -20,7 +20,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
-public class validatorBaselineAgg {
+public class validatorBaseline {
     static KafkaConsumer<String, Block> consumerFromBlocks;
     static KafkaConsumer<String, LocalBalance> consumerFromLocalBalance;
     static KafkaProducer producer;
@@ -104,7 +104,7 @@ public class validatorBaselineAgg {
                         //reset hashmaps and flag
                         bankBalance = new HashMap<String, Long>();
                         partitionBank = new HashMap<>();
-                        System.out.println("validator is rebalanced. Reset hashmaps.");
+                        System.out.println("validator(Baseline) is rebalanced. Reset hashmaps.");
                     }});
 
         // the three consumers below using the same property
