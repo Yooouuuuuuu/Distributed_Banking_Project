@@ -9,15 +9,12 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.simple.SimpleLogger;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 
-public class tps {
+public class tpsRpsAndLatency {
     static KafkaConsumer<String, Block> consumer;
+    static List<Long> latency = new ArrayList<>();
     static long numOfTrades = 0L;
-    static long numOfTradesComplete = 0L;
-
 
 
     public static void main(String[] args) throws Exception {
@@ -26,14 +23,12 @@ public class tps {
         String schemaRegistryUrl = args[1];
         int executeTime = Integer.parseInt(args[2]);
 
-
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off");//"off", "trace", "debug", "info", "warn", "error"
         Properties props = new Properties();
         props.put("bootstrap.servers", bootstrapServers);
         props.put("group.id", UUID.randomUUID().toString());
         props.put("auto.offset.reset", "earliest");
-        props.put("max.poll.records", 10000);
-
+        props.put("max.poll.records", 1000);
 
         props.setProperty("key.deserializer", StringDeserializer.class.getName());
         props.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
@@ -45,8 +40,13 @@ public class tps {
         consumer =
                 new KafkaConsumer<String, Block>(props);
         consumer.subscribe(Collections.singletonList(inputTopic));
-        lastCredit();
+        pollFromCredit();
         consumer.close();
+
+        long numOfTradesComplete = latency.size();
+        long ninetyFivePercent =  Math.round(numOfTradesComplete * 0.95)-1;
+        float TPS = (float) (numOfTradesComplete / executeTime);
+        latency.sort(null);
 
 
 
@@ -55,17 +55,23 @@ public class tps {
         consumer =
                 new KafkaConsumer<String, Block>(props);
         consumer.subscribe(Collections.singleton(inputTopic));
-        findFirstTimestamp();
+        findTrades();
         consumer.close();
 
         float RPS = (float) (numOfTrades / executeTime);
-        System.out.println("num of trade: " + numOfTrades + "\nRPS: " + RPS);
-        float TPS = (float) (numOfTradesComplete / executeTime);
-        System.out.println("num of trade complete: " + numOfTradesComplete + "\nTPS: " + TPS);
+
+        System.out.println(
+                "num of trade: " + numOfTrades +
+                "\nRPS: " + RPS +
+                "\nnum of trade complete: " + numOfTradesComplete +
+                "\nTPS: " + TPS +
+                "\ntop 95% latency: " + latency.get(Math.toIntExact(ninetyFivePercent))
+        );
+        System.out.println();
 
     }
 
-    private static void lastCredit() {
+    private static void pollFromCredit() {
         long timeout = System.currentTimeMillis() + 100000; //100s;
 
         try {
@@ -74,7 +80,7 @@ public class tps {
                 for (ConsumerRecord<String, Block> record : records) {
                     for (int i = 0; i < record.value().getTransactions().size(); i++) {
                         if (record.value().getTransactions().get(i).getCategory() == 1) {
-                            numOfTradesComplete += 1;
+                            latency.add(record.timestamp() - record.value().getTransactions().get(i).getTimestamp1());
                         }
                     }
                 }
@@ -84,9 +90,8 @@ public class tps {
         }
     }
 
-
-    private static void findFirstTimestamp() {
-        long timeout = System.currentTimeMillis() + 600000; //100s;
+    private static void findTrades() {
+        long timeout = System.currentTimeMillis() + 100000; //100s;
 
         try {
             do {
