@@ -7,12 +7,12 @@
 #endMachine.sh
 #writeToCsv.sh machineNum tokensPerSec
 
-validatorOrBaseline=baseline #validator or baseline
+validatorOrBaseline=validator #validator or baseline
 executionTime=1000000
 waitTime=300
 
 #`seq 10000 10000 200000`
-for tokensPerSec in 500000
+for tokensPerSec in 800000
 do
 echo '=== RPS: '$tokensPerSec', '$validatorOrBaseline' ===' 
 #using machine 1 to initialize Kafka topics
