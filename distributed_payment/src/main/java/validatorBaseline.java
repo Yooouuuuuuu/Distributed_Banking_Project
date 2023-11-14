@@ -84,6 +84,9 @@ public class validatorBaseline {
         propsConsumerTx.put("enable.auto.commit", "false");
         propsConsumerTx.put("isolation.level", "read_committed");
         propsConsumerTx.put("max.poll.records", maxPoll);
+        propsConsumerTx.put("max.partition.fetch.bytes", 2097152);
+
+
         //avro part
         propsConsumerTx.setProperty("key.deserializer", StringDeserializer.class.getName());
         propsConsumerTx.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());

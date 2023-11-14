@@ -55,7 +55,8 @@ public class test3 {
                         if (record.value().getTransactions().get(i).getCategory() != 2) {
                             System.out.println("category: " + record.value().getTransactions().get(i).getCategory() +
                                     ", outbank: " + record.value().getTransactions().get(i).getOutAccount() +
-                                    ", inbank: " + record.value().getTransactions().get(i).getInAccount());
+                                    ", inbank: " + record.value().getTransactions().get(i).getInAccount()
+                            );
                         }
                     }
                 }

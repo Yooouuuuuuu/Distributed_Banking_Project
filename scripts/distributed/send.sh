@@ -1,7 +1,6 @@
 #!/bin/bash
 
 #args used in java
-
 machine=$1
 
 if [ $machine -eq 2 ] 
@@ -13,17 +12,15 @@ else
     schemaRegistryUrl="http://192.168.50.224:8081"
 fi
 
-
-
 numOfPartitions=2
 numOfAccounts=1000
 initBalance=100000000
 amountPerTransaction=1
+executionTime=1000000
 
 #need to change for testing
-zipfExponent=1
 tokensPerSec=$2
-executionTime=$3
+zipfExponent=$3
 
 mkdir -p /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/tokensPerSec$((tokensPerSec*2))
 outputFile="/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/timeStamps/tokensPerSec$((tokensPerSec*2))/RPS.txt"

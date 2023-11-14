@@ -45,19 +45,27 @@ public class test2 {
     }
 
     private static void findTrades() {
-        long timeout = System.currentTimeMillis() + 100000; //100s;
+        long originalCount = 0L;
+        long creditCount = 0L;
+        long offsetCount = 0L;
 
         try {
             while(true) {
                 ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<String, Block> record : records) {
                     for (int i = 0; i < record.value().getTransactions().size(); i++) {
-                        if (record.value().getTransactions().get(i).getCategory() != 2) {
-                            System.out.println("category: " + record.value().getTransactions().get(i).getCategory() +
-                                    ", outbank: " + record.value().getTransactions().get(i).getOutAccount() +
-                                    ", inbank: " + record.value().getTransactions().get(i).getInAccount());
+                        if (record.value().getTransactions().get(i).getCategory() == 0) {
+                            originalCount += 1;
+                            offsetCount += 1;
+                        } else if (record.value().getTransactions().get(i).getCategory() == 1) {
+                            creditCount += 1;
+                            offsetCount += 1;
                         }
                     }
+                    System.out.println("originalCount: " + originalCount +
+                            " creditCount: " + creditCount +
+                            " offsetCount: " + offsetCount
+                    );
                 }
             }
         } catch(Exception e) {

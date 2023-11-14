@@ -7,12 +7,20 @@
 #endMachine.sh
 #writeToCsv.sh machineNum tokensPerSec
 
+#for run.sh
 validatorOrBaseline=validator #validator or baseline
-executionTime=1000000
+validatorMaxPoll=2000
+UTXOMaxPoll=10000
+aggregatorMaxPoll=2000
+blockSize=1000
+
+#for send.sh
 waitTime=300
+zipfExponent=0
+
 
 #`seq 10000 10000 200000`
-for tokensPerSec in 800000
+for tokensPerSec in 150000
 do
 echo '=== RPS: '$tokensPerSec', '$validatorOrBaseline' ===' 
 #using machine 1 to initialize Kafka topics
@@ -29,14 +37,14 @@ MACHINE1
 
 #open consumers 
 echo '=== open consumers ==='
-gnome-terminal -- ./runMachine1.sh 1 $validatorOrBaseline
-gnome-terminal -- ./runMachine2.sh 2 $validatorOrBaseline 
+gnome-terminal -- ./runMachine1.sh 1 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize
+gnome-terminal -- ./runMachine2.sh 2 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize
 sleep 30s
 
 #sending data
 echo '=== sending data ==='
-gnome-terminal -- ./sendMachine1.sh 1 $((tokensPerSec/2)) $executionTime
-gnome-terminal -- ./sendMachine2.sh 2 $((tokensPerSec/2)) $executionTime
+gnome-terminal -- ./sendMachine1.sh 1 $((tokensPerSec/2)) $zipfExponent
+gnome-terminal -- ./sendMachine2.sh 2 $((tokensPerSec/2)) $zipfExponent
 sleep $((waitTime))s
 
 #close consumers

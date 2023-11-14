@@ -71,41 +71,61 @@ public class sourceProducer {
         String[] accountList = allAccounts.toArray(new String[0]);
 
         //setups
-        ZipfDistribution zipfDistribution = new ZipfDistribution(accountList.length - 1, zipfExponent);
         RateLimiter limiter = RateLimiter.create(tokensPerSec); //rps
         long start = System.currentTimeMillis();
         long lastFlushTime = System.currentTimeMillis();
         boolean keepSending = true;
         long serialNumber = Long.parseLong(machine);
 
+        int out ;
+        String outAccount = null;
+        String outBank = null;
+
+        int in;
+        String inAccount = null;
+        String inBank = null;
+
         //sending random data
         while (keepSending) {
             limiter.acquire(); //acquire a token for permission, if no token left, block it.
 
-            //generate and send data
-            int out = zipfDistribution.sample();
-            String outAccount = accountList[out];
-            String outBank = outAccount.substring(0, 3);
+            if (zipfExponent != 0) {
+                ZipfDistribution zipfDistribution = new ZipfDistribution(accountList.length - 1, zipfExponent);
 
-            int in = zipfDistribution.sample();
-            String inAccount = accountList[in];
-            String inBank = inAccount.substring(0, 3);
+                //generate and send data
+                out = zipfDistribution.sample();
+                outAccount = accountList[out];
+                outBank = outAccount.substring(0, 3);
 
-            /*
-            //reselect if in and out are same account
-            while (inAccount.equals(outAccount)) {
                 in = zipfDistribution.sample();
                 inAccount = accountList[in];
                 inBank = inAccount.substring(0, 3);
+
+                //reselect if in and out are same account
+                while (inBank.equals(outBank)) {
+                    in = zipfDistribution.sample();
+                    inAccount = accountList[in];
+                    inBank = inAccount.substring(0, 3);
+                }
+
+            } else {
+                // evenly distributed
+                Random rand = new Random();
+
+                //generate and send data
+                outAccount = allAccounts.get(rand.nextInt(allAccounts.size()));
+                outBank = outAccount.substring(0, 3);
+
+                inAccount = allAccounts.get(rand.nextInt(allAccounts.size()));;
+                inBank = inAccount.substring(0, 3);
+
+                //reselect if in and out are same account
+                while (inBank.equals(outBank)) {
+                    inAccount = allAccounts.get(rand.nextInt(allAccounts.size()));;
+                    inBank = inAccount.substring(0, 3);
+                }
+
             }
-
-             */
-
-            /*
-            if (randomAmount) {
-                amountPerTransaction = ThreadLocalRandom.current().nextInt(1000, 10000);
-            } //else use the value args give
-             */
 
             Transaction detail = new Transaction(serialNumber,
                     outBank, outAccount,
@@ -149,46 +169,6 @@ public class sourceProducer {
         //flush and close producer
         producer.flush();
         producer.close();
-
-        //check rps
-        long end = System.currentTimeMillis();
-        long spendTime = end - start;
-        float RPS;
-        System.out.println("execution time: " + spendTime + " (" + executionTime + ") ms");
-
-        if (machine == String.valueOf(1)) {
-            RPS = (float) (1000 * ((serialNumber - 1)/2+1)) / spendTime;
-            System.out.println("numbers of payments sent: " + ((serialNumber - 1)/2+1) + ". RPS = " + RPS);
-        } else {
-            RPS = (float) (1000 * ((serialNumber - 1)/2)) / spendTime;
-            System.out.println("numbers of payments sent: " + ((serialNumber - 1)/2) + ". RPS = " + RPS);
-        }
-
-        //print result
-        //System.out.println("bank balance: " + bankBalance);
-        System.out.println("rejected count: " + rejectedCount);
-        //This bankBalance is for reference only,
-        //if any transaction has been rejected, here shows the linearization result,
-        //however our system is not even serialization.
-
-        //write important data as txt
-        PrintWriter writer = new PrintWriter(outputTxt);
-
-        writer.println("numbers of payments");
-        if (machine == String.valueOf(1)) {
-            writer.println((serialNumber - 1) / 2+1);
-        }else {
-            writer.println((serialNumber - 1) / 2);
-        }
-        writer.println("source producer execution time");
-        writer.println(spendTime);
-        writer.println("RPS");
-        writer.println(RPS);
-
-        writer.flush();
-        writer.close();
-
-        //System.in.read();
 
     }
 }

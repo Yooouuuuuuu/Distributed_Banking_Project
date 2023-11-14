@@ -47,15 +47,17 @@ public class validator {
         String bootstrapServers = args[0];
         String schemaRegistryUrl = args[1];
         int maxPoll = Integer.parseInt(args[2]);
-        boolean orderMultiplePartition = Boolean.parseBoolean(args[3]);
-        boolean UTXODirectAdd = Boolean.parseBoolean(args[4]);
-        String transactionalId = args[5];
-        String log = args[6];
+        int maxPollUTXO = Integer.parseInt(args[3]);
+
+        boolean orderMultiplePartition = Boolean.parseBoolean(args[4]);
+        boolean UTXODirectAdd = Boolean.parseBoolean(args[5]);
+        String transactionalId = args[6];
+        String log = args[7];
         boolean orderSeparateSend = true;
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log);//"off", "trace", "debug", "info", "warn", "error"
-        InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl);
+        InitConsumer(maxPoll, maxPollUTXO, bootstrapServers, schemaRegistryUrl);
         InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId);
         Logger logger = LoggerFactory.getLogger(validator.class);
 
@@ -141,7 +143,7 @@ public class validator {
         pollUTXOThread.stop();
     }
 
-    private static void InitConsumer(int maxPoll, String bootstrapServers, String schemaRegistryUrl) {
+    private static void InitConsumer(int maxPoll, int maxPollUTXO, String bootstrapServers, String schemaRegistryUrl) {
         //consumer consume from "blocks" topic
         Properties propsConsumerTx = new Properties();
         propsConsumerTx.put("bootstrap.servers", bootstrapServers);
@@ -150,6 +152,7 @@ public class validator {
         propsConsumerTx.put("enable.auto.commit", "false");
         propsConsumerTx.put("isolation.level", "read_committed");
         propsConsumerTx.put("max.poll.records", maxPoll);
+        propsConsumerTx.put("max.partition.fetch.bytes", 2097152);
         //avro part
         propsConsumerTx.setProperty("key.deserializer", StringDeserializer.class.getName());
         propsConsumerTx.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
@@ -185,6 +188,9 @@ public class validator {
         propsConsumerAssign.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
         propsConsumerAssign.setProperty("schema.registry.url", schemaRegistryUrl);
         propsConsumerAssign.setProperty("specific.avro.reader", "true");
+        propsConsumerAssign.put("max.poll.records", maxPollUTXO);
+        propsConsumerAssign.put("max.partition.fetch.bytes", 2097152);
+
         //consumer consume from "UTXO" topic
         consumerFromUTXO =
                 new KafkaConsumer<String, Block>(propsConsumerAssign);

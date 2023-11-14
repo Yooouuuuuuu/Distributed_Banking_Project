@@ -6,6 +6,11 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.simple.SimpleLogger;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.*;
 
@@ -42,7 +47,7 @@ public class tpsRpsAndLatency {
         consumer.close();
 
         long numOfTradesComplete = latency.size();
-        long ninetyFivePercent =  Math.round(numOfTradesComplete * 0.95)-1;
+        long ninetyNinePercent =  Math.round(numOfTradesComplete * 0.99)-1;
         float TPS = (float) (numOfTradesComplete / executeTime);
         latency.sort(null);
 
@@ -63,9 +68,21 @@ public class tpsRpsAndLatency {
                 "\nRPS: " + RPS +
                 "\nnum of trade complete: " + numOfTradesComplete +
                 "\nTPS: " + TPS +
-                "\ntop 95% latency: " + latency.get(Math.toIntExact(ninetyFivePercent))
+                "\ntop 99% latency: " + latency.get(Math.toIntExact(ninetyNinePercent))
         );
-        System.out.println();
+
+
+        String a = RPS + ", " + TPS + ", " + latency.get(Math.toIntExact(ninetyNinePercent));
+        List<String> newLines = new ArrayList<>();
+        Path path = Paths.get("/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/result/result.txt");
+        if (Files.readAllLines(path, StandardCharsets.UTF_8).size() == 0) {
+            newLines.add("RPS, TPS, top 99% latency");
+            newLines.add(a);
+        } else {
+            newLines.add(a);
+        }
+
+        Files.write(path, newLines, StandardCharsets.UTF_8,  StandardOpenOption.APPEND);
 
     }
 
