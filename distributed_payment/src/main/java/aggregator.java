@@ -107,7 +107,8 @@ public class aggregator {
         propsProducer.put("bootstrap.servers", bootstrapServers);
         propsProducer.put("transactional.id", transactionalId);
         propsProducer.put("enable.idempotence", "true");
-        propsProducer.put("max.block.ms", "1000");
+        //propsProducer.put("max.block.ms", "1000");
+
         //avro part
         propsProducer.setProperty("key.serializer", StringSerializer.class.getName());
         propsProducer.setProperty("value.serializer", KafkaAvroSerializer.class.getName());

@@ -210,7 +210,8 @@ public class validator {
         propsProducer.put("transactional.id", transactionalId + "Main");
         propsProducer.put("transaction.timeout.ms", 300000);
         propsProducer.put("enable.idempotence", "true");
-        propsProducer.put("max.block.ms", "1000");
+        //propsProducer.put("max.block.ms", "1000");
+
         // avro part
         propsProducer.setProperty("key.serializer", StringSerializer.class.getName());
         propsProducer.setProperty("value.serializer", KafkaAvroSerializer.class.getName());
@@ -223,7 +224,8 @@ public class validator {
         propsProducer2.put("transactional.id", transactionalId + "UTXO");
         propsProducer2.put("transaction.timeout.ms", 300000);
         propsProducer2.put("enable.idempotence", "true");
-        propsProducer2.put("max.block.ms", "1000");
+        //propsProducer2.put("max.block.ms", "1000");
+
         // avro part
         propsProducer2.setProperty("key.serializer", StringSerializer.class.getName());
         propsProducer2.setProperty("value.serializer", KafkaAvroSerializer.class.getName());
@@ -476,8 +478,8 @@ public class validator {
                 lock.lock();
                 for (ConsumerRecord<String, Block> UTXORecord : UTXORecords) {
                     consumeList.add(UTXORecord.value().getTransactions().get(0).getSerialNumber());
-                    if (consumeList.size() % 10000 == 0) {
-                        System.out.println("UTXO consumed counts: " + consumeList.size());
+                    if (consumeList.size() % 1000000 == 0) {
+                        System.out.println("credits consumed > " + consumeList.size());
                     }
 
                     int updatePartition = UTXORecord.value().getTransactions().get(0).getInbankPartition();

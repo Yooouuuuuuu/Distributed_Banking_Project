@@ -130,7 +130,8 @@ public class validatorBaseline {
         propsProducer.put("transactional.id", transactionalId);
         propsProducer.put("transaction.timeout.ms", 300000);
         propsProducer.put("enable.idempotence", "true");
-        propsProducer.put("max.block.ms", "1000");
+        //propsProducer.put("max.block.ms", "1000");
+
         // avro part
         propsProducer.setProperty("key.serializer", StringSerializer.class.getName());
         propsProducer.setProperty("value.serializer", KafkaAvroSerializer.class.getName());
@@ -311,8 +312,8 @@ public class validatorBaseline {
 
                 //just for testing, check if every UTXO is consumed.
                 UTXOCount += 1;
-                if (UTXOCount % 10000 == 0) {
-                    System.out.println("numbers of UTXO consumed: " + UTXOCount);
+                if (UTXOCount % 1000000 == 0) {
+                    System.out.println("credits consumed > " + UTXOCount);
                 }
             }
         }

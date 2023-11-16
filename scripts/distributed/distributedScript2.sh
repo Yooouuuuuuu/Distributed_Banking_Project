@@ -8,19 +8,21 @@
 #writeToCsv.sh machineNum tokensPerSec
 
 #for run.sh
-validatorOrBaseline=validator #validator or baseline
+validatorOrBaseline=baseline #validator or baseline
 validatorMaxPoll=2000
 UTXOMaxPoll=10000
 aggregatorMaxPoll=2000
-blockSize=1000
+blockSize=3000
 
 #for send.sh
-waitTime=300
 zipfExponent=0
+waitTime=300
+
+#tokensPerSec=200000
 
 
 #`seq 10000 10000 200000`
-for tokensPerSec in 150000
+for tokensPerSec in 300000
 do
 echo '=== RPS: '$tokensPerSec', '$validatorOrBaseline' ===' 
 #using machine 1 to initialize Kafka topics
@@ -55,7 +57,7 @@ sleep 5s
 
 echo "=== calculate TPS ===" 
 #read and sort timestamps
-sshpass -p nsd ssh nsd@140.119.164.32 -p 9011 << MACHINE2
+sshpass -p nsd ssh nsd@140.119.164.32 -p 9010 << MACHINE2
 echo 'Access into machine 2 (port:9011)'
 
 cd /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/distributed
