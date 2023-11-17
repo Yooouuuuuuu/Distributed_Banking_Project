@@ -27,8 +27,7 @@ public class sourceProducer {
         float zipfExponent = Float.parseFloat(args[6]);
         float tokensPerSec = Float.parseFloat(args[7]);
         long executionTime = Long.parseLong(args[8]);
-        String outputTxt = args[9];
-        String machine = args[10];
+        String machine = args[9];
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "off"); //"off", "trace", "debug", "info", "warn", "error".

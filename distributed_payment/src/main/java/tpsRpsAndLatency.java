@@ -74,7 +74,7 @@ public class tpsRpsAndLatency {
         String a = TPS + ", " +
                 latency.get(Math.toIntExact(ninetyFivePercent)) + ", " +
                 latency.get(Math.toIntExact(ninetyNinePercent));
-        
+
         List<String> newLines = new ArrayList<>();
         Path path = Paths.get("/home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/result/result.txt");
         if (Files.readAllLines(path, StandardCharsets.UTF_8).size() == 0) {
