@@ -96,7 +96,7 @@ public class generate {
                     bankList.indexOf(outBank),
                     bankList.indexOf(inBank),
                     1L,
-                    0, 0L, 0L);
+                    0, System.currentTimeMillis(), 0L);
             List<Transaction> listOfDetail = new ArrayList<Transaction>();
             listOfDetail.add(detail);
             Block output = Block.newBuilder()

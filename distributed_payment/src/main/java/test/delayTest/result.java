@@ -50,19 +50,22 @@ public class result {
             while(count < 100) {
                 ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<String, Block> record : records) {
-                    latency =  record.timestamp() - record.value().getTransactions().get(0).getTimestamp1();
+                    latency =  record.value().getTransactions().get(0).getTimestamp2() -
+                            record.value().getTransactions().get(0).getTimestamp1();
                     System.out.println("num: " + record.value().getTransactions().get(0).getSerialNumber() +
                             " t1: " + record.value().getTransactions().get(0).getTimestamp1() +
-                            " t2: " + record.timestamp() +
+                            " t2: " + record.value().getTransactions().get(0).getTimestamp2() +
+                            " t3: " + record.timestamp() +
                             " latency: " + latency
                     );
                     avgLatency += latency;
-                    count += 1;
+                    //count += 1;
                 }
             }
         } catch(Exception e) {
             System.out.println(e.getMessage());
         }
+        avgLatency = avgLatency/100;
         System.out.println("average latency of 100 data: " + avgLatency);
     }
 

@@ -110,7 +110,7 @@ public class pollAndSend {
 
     public static void addTimestampAndSend(Block recordValue, ConsumerRecord record) {
         //add transaction to current block
-        recordValue.getTransactions().get(0).put("timestamp1", record.timestamp());
+        recordValue.getTransactions().get(0).put("timestamp2", System.currentTimeMillis());
         producer.send(new ProducerRecord<String, Block>("test2", record.partition(), (String) record.key(), recordValue));
     }
 }
