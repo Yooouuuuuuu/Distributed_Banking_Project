@@ -1,4 +1,4 @@
-package test;
+package test.simpleConsumer;
 
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import my.avroSchema.Block;
@@ -11,7 +11,7 @@ import org.slf4j.simple.SimpleLogger;
 import java.time.Duration;
 import java.util.*;
 
-public class test3 {
+public class transactions {
     static KafkaConsumer<String, Block> consumer;
     static List<Long> latency = new ArrayList<>();
     static long numOfTrades = 0L;
@@ -35,7 +35,7 @@ public class test3 {
         props.setProperty("specific.avro.reader", "true");
 
         //transaction topic, find the timestamp of the first data
-        String inputTopic = "UTXO";
+        String inputTopic = "transactions";
         consumer =
                 new KafkaConsumer<String, Block>(props);
         consumer.subscribe(Collections.singleton(inputTopic));
@@ -45,20 +45,27 @@ public class test3 {
     }
 
     private static void findTrades() {
-        long timeout = System.currentTimeMillis() + 100000; //100s;
+        long originalCount = 0L;
+        long creditCount = 0L;
+        long offsetCount = 0L;
 
         try {
             while(true) {
                 ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<String, Block> record : records) {
                     for (int i = 0; i < record.value().getTransactions().size(); i++) {
-                        if (record.value().getTransactions().get(i).getCategory() != 2) {
-                            System.out.println("category: " + record.value().getTransactions().get(i).getCategory() +
-                                    ", outbank: " + record.value().getTransactions().get(i).getOutAccount() +
-                                    ", inbank: " + record.value().getTransactions().get(i).getInAccount()
-                            );
+                        if (record.value().getTransactions().get(i).getCategory() == 0) {
+                            originalCount += 1;
+                            offsetCount += 1;
+                        } else if (record.value().getTransactions().get(i).getCategory() == 1) {
+                            creditCount += 1;
+                            offsetCount += 1;
                         }
                     }
+                    System.out.println("originalCount: " + originalCount +
+                            " creditCount: " + creditCount +
+                            " offsetCount: " + offsetCount
+                    );
                 }
             }
         } catch(Exception e) {

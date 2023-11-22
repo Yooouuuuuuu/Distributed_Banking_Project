@@ -9,17 +9,15 @@
 
 #for run.sh
 validatorOrBaseline=validator #validator or baseline
-validatorMaxPoll=2000000
-UTXOMaxPoll=10000000
-aggregatorMaxPoll=2000000
+validatorMaxPoll=2000
+UTXOMaxPoll=10000
+aggregatorMaxPoll=2000
 blockSize=3000
 
 #for send.sh
 zipfExponent=0
 waitTime=300
-
 #tokensPerSec=300000
-
 
 #`seq 10000 10000 200000`
 for tokensPerSec in 300000

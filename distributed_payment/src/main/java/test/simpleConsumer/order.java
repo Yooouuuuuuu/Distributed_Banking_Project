@@ -1,4 +1,4 @@
-package test;
+package test.simpleConsumer;
 
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import my.avroSchema.Block;
@@ -11,7 +11,7 @@ import org.slf4j.simple.SimpleLogger;
 import java.time.Duration;
 import java.util.*;
 
-public class test {
+public class order {
     static KafkaConsumer<String, Block> consumer;
     static List<Long> latency = new ArrayList<>();
     static long numOfTrades = 0L;
@@ -52,10 +52,17 @@ public class test {
                 ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<String, Block> record : records) {
                     for (int i = 0; i < record.value().getTransactions().size(); i++) {
+                        /*
                         if (record.value().getTransactions().get(i).getCategory() != 2) {
                             System.out.println("category: " + record.value().getTransactions().get(i).getCategory() +
                                     ", outbank: " + record.value().getTransactions().get(i).getOutAccount() +
                                     ", inbank: " + record.value().getTransactions().get(i).getInAccount());
+                        }
+
+                         */
+                        if (record.value().getTransactions().get(i).getCategory() == 1) {
+                            numOfTrades += 1;
+                            System.out.println("complete trade count: " + numOfTrades);
                         }
                     }
                 }

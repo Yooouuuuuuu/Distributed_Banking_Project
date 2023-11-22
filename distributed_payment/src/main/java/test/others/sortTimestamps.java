@@ -1,4 +1,4 @@
-package test;
+package test.others;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

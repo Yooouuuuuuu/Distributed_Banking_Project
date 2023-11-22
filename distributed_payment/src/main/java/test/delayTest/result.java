@@ -1,4 +1,4 @@
-package test;
+package test.delayTest;
 
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import my.avroSchema.Block;
@@ -11,10 +11,8 @@ import org.slf4j.simple.SimpleLogger;
 import java.time.Duration;
 import java.util.*;
 
-public class test2 {
+public class result {
     static KafkaConsumer<String, Block> consumer;
-    static List<Long> latency = new ArrayList<>();
-    static long numOfTrades = 0L;
 
 
     public static void main(String[] args) throws Exception {
@@ -34,42 +32,38 @@ public class test2 {
         props.setProperty("schema.registry.url", schemaRegistryUrl);
         props.setProperty("specific.avro.reader", "true");
 
-        //transaction topic, find the timestamp of the first data
-        String inputTopic = "transactions";
+        //order topic, record the timestamps of original and UTXO separately
+        String inputTopic = "test2";
         consumer =
                 new KafkaConsumer<String, Block>(props);
-        consumer.subscribe(Collections.singleton(inputTopic));
-        findTrades();
+        consumer.subscribe(Collections.singletonList(inputTopic));
+        pollFromCredit();
         consumer.close();
 
     }
 
-    private static void findTrades() {
-        long originalCount = 0L;
-        long creditCount = 0L;
-        long offsetCount = 0L;
-
+    private static void pollFromCredit() {
+        long latency = 0L;
+        long avgLatency = 0L;
+        int count = 0;
         try {
-            while(true) {
+            while(count < 100) {
                 ConsumerRecords<String, Block> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<String, Block> record : records) {
-                    for (int i = 0; i < record.value().getTransactions().size(); i++) {
-                        if (record.value().getTransactions().get(i).getCategory() == 0) {
-                            originalCount += 1;
-                            offsetCount += 1;
-                        } else if (record.value().getTransactions().get(i).getCategory() == 1) {
-                            creditCount += 1;
-                            offsetCount += 1;
-                        }
-                    }
-                    System.out.println("originalCount: " + originalCount +
-                            " creditCount: " + creditCount +
-                            " offsetCount: " + offsetCount
+                    latency =  record.timestamp() - record.value().getTransactions().get(0).getTimestamp1();
+                    System.out.println("num: " + record.value().getTransactions().get(0).getSerialNumber() +
+                            " t1: " + record.value().getTransactions().get(0).getTimestamp1() +
+                            " t2: " + record.timestamp() +
+                            " latency: " + latency
                     );
+                    avgLatency += latency;
+                    count += 1;
                 }
             }
         } catch(Exception e) {
             System.out.println(e.getMessage());
         }
+        System.out.println("average latency of 100 data: " + avgLatency);
     }
+
 }
