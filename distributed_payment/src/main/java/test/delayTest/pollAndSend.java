@@ -43,7 +43,14 @@ public class pollAndSend {
         while (true) {
             ConsumerRecords<String, Block> records = consumerFromTransactions.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, Block> record : records) {
-                addTimestampAndSend(record.value(), record);
+                producer.beginTransaction(); //Start atomically transactional write.
+                try {
+                    addTimestampAndSend(record.value(), record);
+                    producer.commitTransaction();
+                } catch (Exception e) {
+                    producer.abortTransaction();
+                    System.out.println("Tx aborted.");
+                }
             }
         }
     }

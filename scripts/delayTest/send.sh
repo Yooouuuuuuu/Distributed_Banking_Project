@@ -21,4 +21,3 @@ gnome-terminal -- java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Proj
 
 echo -e "\nEnd. "
 
-

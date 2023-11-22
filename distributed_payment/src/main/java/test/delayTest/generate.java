@@ -110,6 +110,7 @@ public class generate {
             serialNumber += 1;
             producer.flush();
 
+            System.out.println(output);
         }
     }
 }
