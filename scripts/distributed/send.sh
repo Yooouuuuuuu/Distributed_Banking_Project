@@ -3,6 +3,7 @@
 #args used in java
 machine=$1
 
+if [ $machine -eq 2 ] 
 then
     bootstrapServers="192.168.50.213:9092"
     schemaRegistryUrl="http://192.168.50.213:8081"
