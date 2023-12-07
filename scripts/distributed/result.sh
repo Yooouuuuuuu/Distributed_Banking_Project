@@ -2,8 +2,13 @@
 
 #args used in java
 
-bootstrapServers="127.0.0.1:9092"
-schemaRegistryUrl="http://127.0.0.1:8081"
+then
+    bootstrapServers="192.168.50.213:9092"
+    schemaRegistryUrl="http://192.168.50.213:8081"
+else
+    bootstrapServers="192.168.50.224:9092"
+    schemaRegistryUrl="http://192.168.50.224:8081"
+fi
 
 mkdir -p /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/result
 touch /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/result/result.txt
