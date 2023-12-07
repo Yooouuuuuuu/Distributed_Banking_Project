@@ -152,7 +152,9 @@ public class validator {
         propsConsumerTx.put("enable.auto.commit", "false");
         propsConsumerTx.put("isolation.level", "read_committed");
         propsConsumerTx.put("max.poll.records", maxPoll);
+        propsConsumerTx.put("request.timeout.ms", 300000);
         propsConsumerTx.put("max.partition.fetch.bytes", 2097152);
+
         //avro part
         propsConsumerTx.setProperty("key.deserializer", StringDeserializer.class.getName());
         propsConsumerTx.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
@@ -182,14 +184,16 @@ public class validator {
         // the three consumers below using the same property
         Properties propsConsumerAssign = new Properties();
         propsConsumerAssign.put("bootstrap.servers", bootstrapServers);
-        propsConsumerAssign.put("isolation.level", "read_committed");
         propsConsumerAssign.put("enable.auto.commit", "false");
+        propsConsumerAssign.put("isolation.level", "read_committed");
+        propsConsumerAssign.put("max.poll.records", maxPollUTXO);
+        propsConsumerAssign.put("request.timeout.ms", 300000);
+        propsConsumerAssign.put("max.partition.fetch.bytes", 2097152);
+
         propsConsumerAssign.setProperty("key.deserializer", StringDeserializer.class.getName());
         propsConsumerAssign.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
         propsConsumerAssign.setProperty("schema.registry.url", schemaRegistryUrl);
         propsConsumerAssign.setProperty("specific.avro.reader", "true");
-        propsConsumerAssign.put("max.poll.records", maxPollUTXO);
-        propsConsumerAssign.put("max.partition.fetch.bytes", 2097152);
 
         //consumer consume from "UTXO" topic
         consumerFromUTXO =
