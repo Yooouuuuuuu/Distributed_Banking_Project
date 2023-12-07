@@ -4,14 +4,8 @@
 
 machine=$1
 
-if [ $machine -eq 2 ] 
-then
-    bootstrapServers="192.168.50.213:9092"
-    schemaRegistryUrl="http://192.168.50.213:8081"
-else
-    bootstrapServers="192.168.50.224:9092"
-    schemaRegistryUrl="http://192.168.50.224:8081"
-fi
+bootstrapServers="127.0.0.1:9092"
+schemaRegistryUrl="http://127.0.0.1:8081"
 
 numOfPartitions=2
 numOfAccounts=1000

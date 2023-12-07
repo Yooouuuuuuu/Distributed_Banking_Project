@@ -19,4 +19,3 @@ numOfReplicationFactor=1
 java -cp /home/nsd/liang_you_git_repo/Distributed_Banking_Project/distributed_payment/target/distributed-payment-v1-1.0-SNAPSHOT.jar test.delayTest.resetTopics $bootstrapServers $numOfPartitions $numOfReplicationFactor
 echo -e "\nEnd. "
 
-

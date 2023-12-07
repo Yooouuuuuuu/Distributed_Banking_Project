@@ -78,7 +78,8 @@ public class generate {
             Random rand = new Random();
 
             //generate and send data
-            outAccount = allAccounts.get(rand.nextInt(allAccounts.size()));
+            //outAccount = allAccounts.get(rand.nextInt(allAccounts.size()));
+            outAccount = "1010001";
             outBank = outAccount.substring(0, 3);
 
             inAccount = allAccounts.get(rand.nextInt(allAccounts.size()));;
@@ -111,6 +112,11 @@ public class generate {
             producer.flush();
 
             System.out.println(output);
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

@@ -112,7 +112,7 @@ public class initialize {
             String topic_name9 = "accountInfo";
             NewTopic topic_09 = new NewTopic(topic_name9, numOfPartitions, numOfReplicationFactor);
 
-            Thread.sleep(10000); //wait 10 sec in case that the topic deletion is late
+            Thread.sleep(30000); //wait 10 sec in case that the topic deletion is late
             CreateTopicsResult result = adminClient.createTopics(Arrays.asList(topic_01, topic_02, topic_03, topic_05, topic_06, topic_07, topic_08, topic_09));
 
             // check if topic created successfully

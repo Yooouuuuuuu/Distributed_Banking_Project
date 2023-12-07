@@ -7,13 +7,24 @@
 #endMachine.sh
 #writeToCsv.sh machineNum tokensPerSec
 
+#for run.sh
 validatorOrBaseline=baseline #validator or baseline
-executionTime=20000
-waitTime=$((executionTime/450))
+validatorMaxPoll=2000000
+UTXOMaxPoll=10000000
+aggregatorMaxPoll=2000000
+blockSize=3000
+
+#for send.sh
+zipfExponent=0
+waitTime=300
+
+#tokensPerSec=300000
+
 
 #`seq 10000 10000 200000`
-for tokensPerSec in 200000
+for tokensPerSec in 300000
 do
+echo '=== RPS: '$tokensPerSec', '$validatorOrBaseline' ===' 
 #using machine 1 to initialize Kafka topics
 sshpass -p nsd ssh nsd@140.119.164.32 -p 9010 << MACHINE1
 echo '=== Access into machine 1 (port:9010) ==='
@@ -28,30 +39,31 @@ MACHINE1
 
 #open consumers 
 echo '=== open consumers ==='
-gnome-terminal -- ./runMachine1.sh 1 $validatorOrBaseline
-gnome-terminal -- ./runMachine2.sh 2 $validatorOrBaseline 
+gnome-terminal -- ./runMachine1.sh 1 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize
+gnome-terminal -- ./runMachine2.sh 2 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize
 sleep 30s
 
 #sending data
 echo '=== sending data ==='
-gnome-terminal -- ./sendMachine1.sh 1 $((tokensPerSec/2)) $executionTime
-gnome-terminal -- ./sendMachine2.sh 2 $((tokensPerSec/2)) $executionTime
+gnome-terminal -- ./sendMachine1.sh 1 $((tokensPerSec/2)) $zipfExponent
+gnome-terminal -- ./sendMachine2.sh 2 $((tokensPerSec/2)) $zipfExponent
 sleep $((waitTime))s
 
 #close consumers
 echo '=== close consumers ==='
 gnome-terminal -- ./endMachine1.sh
 gnome-terminal -- ./endMachine2.sh
+sleep 5s
 
+echo "=== calculate TPS ===" 
 #read and sort timestamps
-sshpass -p nsd ssh nsd@140.119.164.32 -p 9011 << MACHINE2
-echo '=== Access into machine 2 (port:9011) ==='
+sshpass -p nsd ssh nsd@140.119.164.32 -p 9010 << MACHINE2
+echo 'Access into machine 2 (port:9011)'
 
-echo '=== read and sort timestamps ==='
 cd /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/distributed
-./writeToCsv.sh 2 $tokensPerSec $executionTime
+./result.sh $waitTime
 
-echo '=== Exit machine 2 (port:9011) ==='
+echo 'Exit machine 2 (port:9011)'
 exit
 MACHINE2
 done
