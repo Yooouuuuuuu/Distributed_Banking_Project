@@ -189,6 +189,9 @@ public class validator {
         propsConsumerAssign.put("max.poll.records", maxPollUTXO);
         propsConsumerAssign.put("request.timeout.ms", 300000);
         propsConsumerAssign.put("max.partition.fetch.bytes", 2097152);
+        
+        propsConsumerAssign.put("security.protocol", "SASL_SSL");
+
 
         propsConsumerAssign.setProperty("key.deserializer", StringDeserializer.class.getName());
         propsConsumerAssign.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
