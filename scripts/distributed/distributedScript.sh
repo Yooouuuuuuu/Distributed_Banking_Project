@@ -45,7 +45,7 @@ cd /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/distributed
 
 if [ $delay -ne 0 ]
 then
-    sudo tc qdisc add dev enp52s0 root netem delay $delay+ms
+    echo nsd | sudo -S tc qdisc add dev enp52s0 root netem delay '$delay'ms
 fi
 
 echo '=== Exit machine 1 (port:9010) ==='
@@ -55,7 +55,7 @@ MACHINE1
 if [ $delay -ne 0 ]
 then
 sshpass -p nsd ssh nsd@140.119.164.32 -p 9011 << MACHINE2
-sudo tc qdisc add dev enp52s0 root netem delay $delay+ms
+    echo nsd | sudo -S tc qdisc add dev enp52s0 root netem delay '$delay'ms
 exit
 MACHINE2
 fi

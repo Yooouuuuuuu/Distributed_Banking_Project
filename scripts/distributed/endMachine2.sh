@@ -7,7 +7,7 @@ echo 'Access into machine 2 (port:9011)'
 
 if [ delay -ne 0 ]
 then
-    sudo tc qdisc del dev enp52s0 root netem delay $delay+ms
+    echo nsd | sudo -S tc qdisc del dev enp52s0 root netem delay '$delay'ms
 fi
 
 #kill Kafka consumers
