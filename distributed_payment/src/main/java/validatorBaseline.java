@@ -50,7 +50,7 @@ public class validatorBaseline {
 
         //poll from "blocks" topic
         while (true) {
-            ConsumerRecords<String, Block> records = consumerFromBlocks.poll(Duration.ofMillis(100));
+            ConsumerRecords<String, Block> records = consumerFromBlocks.poll(Duration.ofMillis(10000));
             for (ConsumerRecord<String, Block> record : records) {
                 //Start atomically transactional write. One block per transactional write.
                 producer.beginTransaction();

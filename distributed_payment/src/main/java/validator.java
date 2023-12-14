@@ -71,7 +71,7 @@ public class validator {
                     producer.initTransactions();
                     //poll from "blocks" topic
                     while (!threadsStopFlag) {
-                        ConsumerRecords<String, Block> records = consumerFromBlocks.poll(Duration.ofMillis(100));
+                        ConsumerRecords<String, Block> records = consumerFromBlocks.poll(Duration.ofMillis(10000));
                         for (ConsumerRecord<String, Block> record : records) {
                             //logger.info(record.value().toString());
                             //Start atomically transactional write. One block per transactional write.
