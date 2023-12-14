@@ -53,8 +53,8 @@ public class validator {
         boolean UTXODirectAdd = Boolean.parseBoolean(args[5]);
         String transactionalId = args[6];
         String log = args[7];
-        //long maxPartitionFetchBytes = Long.parseLong(args[8]);
-
+        long maxPartitionFetchBytes = Long.parseLong(args[8]);
+        String acks = args[9];
 
 
         boolean orderSeparateSend = true;
@@ -62,8 +62,8 @@ public class validator {
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log);//"off", "trace", "debug", "info", "warn", "error"
-        InitConsumer(maxPoll, maxPollUTXO, bootstrapServers, schemaRegistryUrl);
-        InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId);
+        InitConsumer(maxPoll, maxPollUTXO, bootstrapServers, schemaRegistryUrl, maxPartitionFetchBytes);
+        InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId, acks);
         Logger logger = LoggerFactory.getLogger(validator.class);
 
         //thread 0
@@ -148,7 +148,8 @@ public class validator {
         pollUTXOThread.stop();
     }
 
-    private static void InitConsumer(int maxPoll, int maxPollUTXO, String bootstrapServers, String schemaRegistryUrl) {
+    private static void InitConsumer(
+            int maxPoll, int maxPollUTXO, String bootstrapServers, String schemaRegistryUrl, long maxPartitionFetchBytes) {
         //consumer consume from "blocks" topic
         Properties propsConsumerTx = new Properties();
         propsConsumerTx.put("bootstrap.servers", bootstrapServers);
@@ -158,7 +159,7 @@ public class validator {
         propsConsumerTx.put("isolation.level", "read_committed");
         propsConsumerTx.put("max.poll.records", maxPoll);
         propsConsumerTx.put("request.timeout.ms", 300000);
-        propsConsumerTx.put("max.partition.fetch.bytes", 2097152);
+        propsConsumerTx.put("max.partition.fetch.bytes", maxPartitionFetchBytes);
 
         //avro part
         propsConsumerTx.setProperty("key.deserializer", StringDeserializer.class.getName());
@@ -193,7 +194,7 @@ public class validator {
         propsConsumerAssign.put("isolation.level", "read_committed");
         propsConsumerAssign.put("max.poll.records", maxPollUTXO);
         propsConsumerAssign.put("request.timeout.ms", 300000);
-        propsConsumerAssign.put("max.partition.fetch.bytes", 2097152);
+        propsConsumerAssign.put("max.partition.fetch.bytes", maxPartitionFetchBytes);
 
         propsConsumerAssign.setProperty("key.deserializer", StringDeserializer.class.getName());
         propsConsumerAssign.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
@@ -213,13 +214,16 @@ public class validator {
                 new KafkaConsumer<String, LocalBalance>(propsConsumerAssign);
     }
 
-    private static void InitProducer(String bootstrapServers, String schemaRegistryUrl, String transactionalId) {
+    private static void InitProducer(
+            String bootstrapServers, String schemaRegistryUrl, String transactionalId, String acks) {
         Properties propsProducer = new Properties();
         propsProducer.put("bootstrap.servers", bootstrapServers);
         propsProducer.put("transactional.id", transactionalId + "Main");
         propsProducer.put("transaction.timeout.ms", 300000);
         propsProducer.put("enable.idempotence", "true");
+        propsProducer.put("acks", acks);
         //propsProducer.put("max.block.ms", "1000");
+
 
         // avro part
         propsProducer.setProperty("key.serializer", StringSerializer.class.getName());
@@ -233,6 +237,7 @@ public class validator {
         propsProducer2.put("transactional.id", transactionalId + "UTXO");
         propsProducer2.put("transaction.timeout.ms", 300000);
         propsProducer2.put("enable.idempotence", "true");
+        propsProducer2.put("acks", acks);
         //propsProducer2.put("max.block.ms", "1000");
 
         // avro part

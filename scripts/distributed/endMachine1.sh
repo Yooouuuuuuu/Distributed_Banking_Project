@@ -1,7 +1,14 @@
 #!/bin/sh
 
+delay=$1
+
 sshpass -p nsd ssh nsd@140.119.164.32 -p 9010 << MACHINE1
 echo 'Access into machine 1 (port:9010)'
+
+if [ delay -ne 0 ]
+then
+    sudo tc qdisc del dev enp52s0 root netem delay $delay+ms
+fi
 
 #kill Kafka consumers
 pkill -f 'distributed-payment-v1-1.0-SNAPSHOT.jar'

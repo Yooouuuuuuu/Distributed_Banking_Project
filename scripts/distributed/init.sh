@@ -13,9 +13,9 @@ else
     schemaRegistryUrl="http://192.168.50.224:8081"
 fi
 
-numOfPartitions=2
-numOfAccounts=1000
-numOfReplicationFactor=1
+numOfPartitions=$2
+numOfAccounts=$3
+numOfReplicationFactor=$4
 initBalance=100000000
 orderMultiplePartition="true"
 UTXODoNotAgg="true"

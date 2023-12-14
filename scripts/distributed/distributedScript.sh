@@ -8,39 +8,63 @@
 #writeToCsv.sh machineNum tokensPerSec
 
 #for run.sh
-validatorOrBaseline=baseline #validator or baseline
+validatorOrBaseline=validator #validator or baseline
 validatorMaxPoll=2000000
 UTXOMaxPoll=10000000
 aggregatorMaxPoll=2000000
 blockSize=3000
+maxFetchBytes=1048576
+acks=1
 
 #for send.sh
 zipfExponent=0
 waitTime=300
+tokensPerSec=100000
 
-#tokensPerSec=300000
+#init
+numOfPartitions=2
+numOfAccounts=1000
+numOfReplicationFactor=1
+delay=0
 
+#for tokensPerSec in `seq 5000 5000 300000`
+#for maxFetchBytes in `seq 5000 5000 300000`
+#for blockSize in `seq 5000 5000 300000`
+#for delay in `seq 0 10 100`
 
-#`seq 10000 10000 200000`
-for tokensPerSec in 100000
+for delay in `seq 10 10 100`
 do
 echo '=== RPS: '$tokensPerSec', '$validatorOrBaseline' ===' 
-#using machine 1 to initialize Kafka topics
+#initialize Kafka topics and add delay
 sshpass -p nsd ssh nsd@140.119.164.32 -p 9010 << MACHINE1
 echo '=== Access into machine 1 (port:9010) ==='
 
 echo 'init Kafka'
 cd /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/distributed
-./init.sh 1
+./init.sh 1 $numOfPartitions $numOfAccounts $numOfReplicationFactor
+
+if [ $delay -ne 0 ]
+then
+    sudo tc qdisc add dev enp52s0 root netem delay $delay+ms
+fi
 
 echo '=== Exit machine 1 (port:9010) ==='
 exit
 MACHINE1
 
+if [ $delay -ne 0 ]
+then
+sshpass -p nsd ssh nsd@140.119.164.32 -p 9011 << MACHINE2
+sudo tc qdisc add dev enp52s0 root netem delay $delay+ms
+exit
+MACHINE2
+fi
+
+
 #open consumers 
 echo '=== open consumers ==='
-gnome-terminal -- ./runMachine1.sh 1 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize
-gnome-terminal -- ./runMachine2.sh 2 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize
+gnome-terminal -- ./runMachine1.sh 1 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks
+gnome-terminal -- ./runMachine2.sh 2 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks
 sleep 30s
 
 #sending data
@@ -51,8 +75,8 @@ sleep $((waitTime))s
 
 #close consumers
 echo '=== close consumers ==='
-gnome-terminal -- ./endMachine1.sh
-gnome-terminal -- ./endMachine2.sh
+gnome-terminal -- ./endMachine1.sh $delay
+gnome-terminal -- ./endMachine2.sh $delay
 sleep 5s
 
 echo "=== calculate TPS ===" 

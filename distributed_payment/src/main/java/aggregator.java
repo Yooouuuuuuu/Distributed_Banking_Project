@@ -33,11 +33,13 @@ public class aggregator {
         long blockTimeout = Long.parseLong(args[5]); //aggregator only
         String transactionalId = args[6];
         String log = args[7];
+        long maxPartitionFetchBytes = Long.parseLong(args[8]);
+        String acks = args[9];
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log); //"off", "trace", "debug", "info", "warn", "error".
-        InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl, numOfPartitions);
-        InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId);
+        InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl, numOfPartitions, maxPartitionFetchBytes);
+        InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId, acks);
         producer.initTransactions();
 
         //poll from "transactions" topic
@@ -63,7 +65,8 @@ public class aggregator {
         }
     }
 
-    private static void InitConsumer(int maxPoll, String bootstrapServers, String schemaRegistryUrl, int numOfPartitions) {
+    private static void InitConsumer(
+            int maxPoll, String bootstrapServers, String schemaRegistryUrl, int numOfPartitions, long maxPartitionFetchBytes) {
         //consumer consume from "transactions" topic
         Properties propsConsumer = new Properties();
         propsConsumer.put("bootstrap.servers", bootstrapServers);
@@ -72,6 +75,8 @@ public class aggregator {
         propsConsumer.put("enable.auto.commit", "false");
         propsConsumer.put("isolation.level", "read_committed");
         propsConsumer.put("max.poll.records", maxPoll);
+        propsConsumer.put("max.partition.fetch.bytes", maxPartitionFetchBytes);
+
         //avro part
         propsConsumer.setProperty("key.deserializer", StringDeserializer.class.getName());
         propsConsumer.setProperty("value.deserializer", KafkaAvroDeserializer.class.getName());
@@ -102,11 +107,13 @@ public class aggregator {
                     }});
     }
 
-    private static void InitProducer(String bootstrapServers, String schemaRegistryUrl, String transactionalId) {
+    private static void InitProducer(
+            String bootstrapServers, String schemaRegistryUrl, String transactionalId, String acks) {
         Properties propsProducer = new Properties();
         propsProducer.put("bootstrap.servers", bootstrapServers);
         propsProducer.put("transactional.id", transactionalId);
         propsProducer.put("enable.idempotence", "true");
+        propsProducer.put("acks", acks);
         //propsProducer.put("max.block.ms", "1000");
 
         //avro part
