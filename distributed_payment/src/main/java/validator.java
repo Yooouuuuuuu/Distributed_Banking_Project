@@ -53,7 +53,7 @@ public class validator {
         boolean UTXODirectAdd = Boolean.parseBoolean(args[5]);
         String transactionalId = args[6];
         String log = args[7];
-        long maxPartitionFetchBytes = Long.parseLong(args[8]);
+        int maxPartitionFetchBytes = Integer.parseInt(args[8]);
         String acks = args[9];
 
 
@@ -149,7 +149,7 @@ public class validator {
     }
 
     private static void InitConsumer(
-            int maxPoll, int maxPollUTXO, String bootstrapServers, String schemaRegistryUrl, long maxPartitionFetchBytes) {
+            int maxPoll, int maxPollUTXO, String bootstrapServers, String schemaRegistryUrl, int maxPartitionFetchBytes) {
         //consumer consume from "blocks" topic
         Properties propsConsumerTx = new Properties();
         propsConsumerTx.put("bootstrap.servers", bootstrapServers);

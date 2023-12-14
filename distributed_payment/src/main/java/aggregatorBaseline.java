@@ -35,7 +35,7 @@ public class aggregatorBaseline {
         long blockTimeout = Long.parseLong(args[5]); //aggregator only
         String transactionalId = args[6];
         String log = args[7];
-        long maxPartitionFetchBytes = Long.parseLong(args[8]);
+        int maxPartitionFetchBytes = Integer.parseInt(args[8]);
         String acks = args[9];
 
         //setups
@@ -83,7 +83,7 @@ public class aggregatorBaseline {
     }
 
     private static void InitConsumer(
-            int maxPoll, String bootstrapServers, String schemaRegistryUrl, int numOfPartitions, long maxPartitionFetchBytes) {
+            int maxPoll, String bootstrapServers, String schemaRegistryUrl, int numOfPartitions, int maxPartitionFetchBytes) {
         //consumer consume from "transactions" topic
         Properties propsConsumer = new Properties();
         propsConsumer.put("bootstrap.servers", bootstrapServers);
