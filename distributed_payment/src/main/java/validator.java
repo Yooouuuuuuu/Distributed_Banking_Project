@@ -53,7 +53,12 @@ public class validator {
         boolean UTXODirectAdd = Boolean.parseBoolean(args[5]);
         String transactionalId = args[6];
         String log = args[7];
+        //long maxPartitionFetchBytes = Long.parseLong(args[8]);
+
+
+
         boolean orderSeparateSend = true;
+
 
         //setups
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log);//"off", "trace", "debug", "info", "warn", "error"
@@ -433,7 +438,7 @@ public class validator {
                             while (true) {
                                 consumerFromUTXOOffset.seek(topicPartition, latestOffset);
                                 ConsumerRecords<String, Block> offsetRecords =
-                                        consumerFromUTXOOffset.poll(Duration.ofMillis(100));
+                                        consumerFromUTXOOffset.poll(Duration.ofMillis(10000));
                                 for (ConsumerRecord<String, Block> offsetRecord : offsetRecords) {
                                     lastOffsetOfUTXO.put(updatePartition,
                                             offsetRecord.value().getTransactions().get(0).getAmount());
@@ -478,7 +483,7 @@ public class validator {
 
             producer2.beginTransaction();
             try {
-                ConsumerRecords<String, Block> UTXORecords = consumerFromUTXO.poll(Duration.ofMillis(100));
+                ConsumerRecords<String, Block> UTXORecords = consumerFromUTXO.poll(Duration.ofMillis(10000));
                 lock.lock();
                 for (ConsumerRecord<String, Block> UTXORecord : UTXORecords) {
                     consumeList.add(UTXORecord.value().getTransactions().get(0).getSerialNumber());
@@ -562,7 +567,7 @@ public class validator {
         consumerFromLocalBalance.seek(topicPartition, 0);
         outerLoop:
         while (true) {
-            ConsumerRecords<String, LocalBalance> balanceRecords = consumerFromLocalBalance.poll(Duration.ofMillis(100));
+            ConsumerRecords<String, LocalBalance> balanceRecords = consumerFromLocalBalance.poll(Duration.ofMillis(10000));
             for (ConsumerRecord<String, LocalBalance> balanceRecord : balanceRecords) {
                 bankBalance.compute(balanceRecord.key(), (key, value)
                         -> balanceRecord.value().getBalance());

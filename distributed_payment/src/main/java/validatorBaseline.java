@@ -338,7 +338,7 @@ public class validatorBaseline {
         consumerFromLocalBalance.seek(topicPartition, 0);
         outerLoop:
         while (true) {
-            ConsumerRecords<String, LocalBalance> balanceRecords = consumerFromLocalBalance.poll(Duration.ofMillis(100));
+            ConsumerRecords<String, LocalBalance> balanceRecords = consumerFromLocalBalance.poll(Duration.ofMillis(10000));
             for (ConsumerRecord<String, LocalBalance> balanceRecord : balanceRecords) {
                 bankBalance.compute(balanceRecord.key(), (key, value)
                         -> balanceRecord.value().getBalance());
