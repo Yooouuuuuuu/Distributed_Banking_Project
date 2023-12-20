@@ -218,10 +218,10 @@ public class validatorNoTx {
             String bootstrapServers, String schemaRegistryUrl, String transactionalId, String acks) {
         Properties propsProducer = new Properties();
         propsProducer.put("bootstrap.servers", bootstrapServers);
-        //propsProducer.put("transactional.id", transactionalId + "Main");
-        //propsProducer.put("transaction.timeout.ms", 300000);
-        //propsProducer.put("enable.idempotence", "true");
-        //propsProducer.put("acks", acks);
+        propsProducer.put("transactional.id", transactionalId + "Main");
+        propsProducer.put("transaction.timeout.ms", 300000);
+        propsProducer.put("enable.idempotence", "true");
+        propsProducer.put("acks", acks);
         //propsProducer.put("max.block.ms", "1000");
 
 
@@ -234,10 +234,10 @@ public class validatorNoTx {
 
         Properties propsProducer2 = new Properties();
         propsProducer2.put("bootstrap.servers", bootstrapServers);
-        //propsProducer2.put("transactional.id", transactionalId + "UTXO");
-        //propsProducer2.put("transaction.timeout.ms", 300000);
-        //propsProducer2.put("enable.idempotence", "true");
-        //propsProducer2.put("acks", acks);
+        propsProducer2.put("transactional.id", transactionalId + "UTXO");
+        propsProducer2.put("transaction.timeout.ms", 300000);
+        propsProducer2.put("enable.idempotence", "true");
+        propsProducer2.put("acks", acks);
         //propsProducer2.put("max.block.ms", "1000");
 
         // avro part
