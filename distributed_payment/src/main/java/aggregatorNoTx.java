@@ -10,10 +10,11 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.simple.SimpleLogger;
+
 import java.time.Duration;
 import java.util.*;
 
-public class aggregator {
+public class aggregatorNoTx {
 
     static KafkaConsumer<String, Block> consumerFromTransactions;
     static Producer<String, Block> producer;
@@ -40,7 +41,7 @@ public class aggregator {
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log); //"off", "trace", "debug", "info", "warn", "error".
         InitConsumer(maxPoll, bootstrapServers, schemaRegistryUrl, numOfPartitions, maxPartitionFetchBytes);
         InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId, acks);
-        producer.initTransactions();
+        //producer.initTransactions();
 
         //poll from "transactions" topic
         while (true) {
@@ -49,13 +50,13 @@ public class aggregator {
                 //aggregate transactions to blocks using list in Avro
                 aggToBlock(record.value(), record);
                 if (listOfCounts.get(record.value().getTransactions().get(0).getOutbankPartition()) >= blockSize) {
-                    producer.beginTransaction(); //Start atomically transactional write.
+                    //producer.beginTransaction(); //Start atomically transactional write.
                     try {
                         //if blocks is full (or time out), send them to "blocks" topic.
                         sendBlock(record.value(), record);
-                        producer.commitTransaction();
+                        //producer.commitTransaction();
                     } catch (Exception e) {
-                        producer.abortTransaction();
+                        //producer.abortTransaction();
                         System.out.println("Tx aborted.");
                     }
                 }
@@ -111,9 +112,9 @@ public class aggregator {
             String bootstrapServers, String schemaRegistryUrl, String transactionalId, String acks) {
         Properties propsProducer = new Properties();
         propsProducer.put("bootstrap.servers", bootstrapServers);
-        propsProducer.put("transactional.id", transactionalId);
-        propsProducer.put("enable.idempotence", "true");
-        propsProducer.put("acks", acks);
+        //propsProducer.put("transactional.id", transactionalId);
+        //propsProducer.put("enable.idempotence", "true");
+        //propsProducer.put("acks", acks);
         //propsProducer.put("max.block.ms", "1000");
 
         //avro part
@@ -171,7 +172,7 @@ public class aggregator {
             } else {
                 if (System.currentTimeMillis() - bankTime.get(bankPartition.get(partition)) > blockTimeout) { //timeout
                     //start kafka transactional write
-                    producer.beginTransaction();
+                    //producer.beginTransaction();
 
                     try {
                         //send it to "block" topic.
@@ -197,9 +198,9 @@ public class aggregator {
                         System.out.println("partition " + partition + " send a block since timeout\n" + listOfCounts);
 
                         //commit transactional write
-                        producer.commitTransaction();
+                        //producer.commitTransaction();
                     } catch (Exception e) {
-                        producer.abortTransaction();
+                        //producer.abortTransaction();
                         System.out.println("Tx aborted.");
                     }
                 }

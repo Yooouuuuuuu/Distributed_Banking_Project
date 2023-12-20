@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class validator {
+public class validatorNoTx {
     static KafkaConsumer<String, Block> consumerFromBlocks;
     static KafkaConsumer<String, Block> consumerFromUTXO;
     static KafkaConsumer<String, Block> consumerFromUTXOOffset;
@@ -64,7 +64,7 @@ public class validator {
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, log);//"off", "trace", "debug", "info", "warn", "error"
         InitConsumer(maxPoll, maxPollUTXO, bootstrapServers, schemaRegistryUrl, maxPartitionFetchBytes);
         InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId, acks);
-        Logger logger = LoggerFactory.getLogger(validator.class);
+        Logger logger = LoggerFactory.getLogger(validatorNoTx.class);
 
         //thread 0
         Thread pollBlocksThread = new Thread(new Runnable() {
@@ -73,14 +73,14 @@ public class validator {
 
                 try {
                     long transactionCounts = 0;
-                    producer.initTransactions();
+                    //producer.initTransactions();
                     //poll from "blocks" topic
                     while (!threadsStopFlag) {
                         ConsumerRecords<String, Block> records = consumerFromBlocks.poll(Duration.ofMillis(1000));
                         for (ConsumerRecord<String, Block> record : records) {
                             //logger.info(record.value().toString());
                             //Start atomically transactional write. One block per transactional write.
-                            producer.beginTransaction();
+                            //producer.beginTransaction();
                             try {
                                 lock.lock();
                                 //As outbank, withdraw money and create UTXO for inbank. Category 0 means it is a raw transaction.
@@ -101,11 +101,11 @@ public class validator {
                                     }
                                 }
                                 consumerFromBlocks.commitSync();
-                                producer.commitTransaction();
+                                //producer.commitTransaction();
                                 lock.unlock();
                             } catch (Exception e) {
                                 //if kafka TX aborted, set the flag to end all threads.
-                                producer.abortTransaction();
+                                //producer.abortTransaction();
                                 System.out.println(Thread.currentThread().getName() + " Tx aborted. Exception: " + e.getMessage());
                                 threadsStopFlag = true;
                                 lock.unlock();
@@ -218,10 +218,10 @@ public class validator {
             String bootstrapServers, String schemaRegistryUrl, String transactionalId, String acks) {
         Properties propsProducer = new Properties();
         propsProducer.put("bootstrap.servers", bootstrapServers);
-        propsProducer.put("transactional.id", transactionalId + "Main");
-        propsProducer.put("transaction.timeout.ms", 300000);
-        propsProducer.put("enable.idempotence", "true");
-        propsProducer.put("acks", acks);
+        //propsProducer.put("transactional.id", transactionalId + "Main");
+        //propsProducer.put("transaction.timeout.ms", 300000);
+        //propsProducer.put("enable.idempotence", "true");
+        //propsProducer.put("acks", acks);
         //propsProducer.put("max.block.ms", "1000");
 
 
@@ -234,10 +234,10 @@ public class validator {
 
         Properties propsProducer2 = new Properties();
         propsProducer2.put("bootstrap.servers", bootstrapServers);
-        propsProducer2.put("transactional.id", transactionalId + "UTXO");
-        propsProducer2.put("transaction.timeout.ms", 300000);
-        propsProducer2.put("enable.idempotence", "true");
-        propsProducer2.put("acks", acks);
+        //propsProducer2.put("transactional.id", transactionalId + "UTXO");
+        //propsProducer2.put("transaction.timeout.ms", 300000);
+        //propsProducer2.put("enable.idempotence", "true");
+        //propsProducer2.put("acks", acks);
         //propsProducer2.put("max.block.ms", "1000");
 
         // avro part
@@ -419,7 +419,7 @@ public class validator {
     }
 
     private static void UpdateUTXO(boolean orderSeparateSend) throws InterruptedException {
-        producer2.initTransactions();
+        //producer2.initTransactions();
 
         //if thread-0's kafka consumer repartition, init the UTXO consumer.
         while (!threadsStopFlag) {
@@ -486,7 +486,7 @@ public class validator {
                 }
             }
 
-            producer2.beginTransaction();
+            //producer2.beginTransaction();
             try {
                 ConsumerRecords<String, Block> UTXORecords = consumerFromUTXO.poll(Duration.ofMillis(1000));
                 lock.lock();
@@ -546,11 +546,11 @@ public class validator {
                             partitionBank.get(updatePartition),
                             offsetBlock));
                 }
-                producer2.commitTransaction();
+                //producer2.commitTransaction();
                 lock.unlock();
 
             } catch (Exception e) {
-                producer2.abortTransaction();
+                //producer2.abortTransaction();
                 System.out.println(Thread.currentThread().getName() + "Tx aborted(UTXO update failed). Exception: " + e.getMessage());
                 threadsStopFlag = true;
                 lock.unlock();

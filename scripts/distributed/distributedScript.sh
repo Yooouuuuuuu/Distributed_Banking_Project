@@ -8,13 +8,13 @@
 #writeToCsv.sh machineNum tokensPerSec
 
 #for run.sh
-validatorOrBaseline=validator #validator or baseline
+validatorOrBaseline=baseline #validator or baseline
 validatorMaxPoll=2000000
 UTXOMaxPoll=10000000
 aggregatorMaxPoll=2000000
 blockSize=3000
 maxFetchBytes=1048576
-acks=1
+acks=all
 
 #for send.sh
 zipfExponent=0
@@ -32,7 +32,7 @@ delay=0
 #for blockSize in `seq 5000 5000 300000`
 #for delay in `seq 0 10 100`
 
-for delay in `seq 10 10 100`
+for tokensPerSec in 150000 265000 280000
 do
 echo '=== RPS: '$tokensPerSec', '$validatorOrBaseline' ===' 
 #initialize Kafka topics and add delay
@@ -43,7 +43,7 @@ echo 'init Kafka'
 cd /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/distributed
 ./init.sh 1 $numOfPartitions $numOfAccounts $numOfReplicationFactor
 
-if [ $delay -ne 0 ]
+if [ $delay != 0 ]
 then
     echo nsd | sudo -S tc qdisc add dev enp52s0 root netem delay '$delay'ms
 fi
@@ -52,7 +52,7 @@ echo '=== Exit machine 1 (port:9010) ==='
 exit
 MACHINE1
 
-if [ $delay -ne 0 ]
+if [ $delay != 0 ]
 then
 sshpass -p nsd ssh nsd@140.119.164.32 -p 9011 << MACHINE2
     echo nsd | sudo -S tc qdisc add dev enp52s0 root netem delay '$delay'ms

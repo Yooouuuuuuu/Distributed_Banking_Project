@@ -46,7 +46,7 @@ public class aggregatorBaseline {
 
         //poll from "transactions" topic
         while (true) {
-            ConsumerRecords<String, Block> records = consumerFromTransactions.poll(Duration.ofMillis(10000));
+            ConsumerRecords<String, Block> records = consumerFromTransactions.poll(Duration.ofMillis(1000));
             for (ConsumerRecord<String, Block> record : records) {
                 recordsCount += 1;
                 //aggregate transactions to blocks using list in Avro
