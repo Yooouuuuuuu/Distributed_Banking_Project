@@ -8,7 +8,7 @@
 #writeToCsv.sh machineNum tokensPerSec
 
 #for run.sh
-validatorOrBaseline=t #validator or baseline
+validatorOrBaseline=validator #validator or baseline
 validatorMaxPoll=2000000
 UTXOMaxPoll=10000000
 aggregatorMaxPoll=2000000
@@ -30,11 +30,11 @@ delay=0
 #for tokensPerSec in `seq 5000 5000 300000`
 #for maxFetchBytes in `seq 5000 5000 300000`
 #for blockSize in `seq 5000 5000 300000`
-#for delay in `seq 0 10 100`
+#for delay in `seq 0 5 100`
 
-for tokensPerSec in `seq 10000 10000 200000`
+for tokensPerSec in 200000
 do
-echo '=== RPS: '$tokensPerSec', '$validatorOrBaseline' ===' 
+echo '=== delay: '$delay', '$validatorOrBaseline' ===' 
 #initialize Kafka topics and add delay
 sshpass -p nsd ssh nsd@140.119.164.32 -p 9010 << MACHINE1
 echo '=== Access into machine 1 (port:9010) ==='

@@ -73,7 +73,7 @@ public class aggregatorNoTx {
         propsConsumer.put("bootstrap.servers", bootstrapServers);
         propsConsumer.put("group.id", "aggregator-group");
         propsConsumer.put("auto.offset.reset", "earliest");
-        propsConsumer.put("enable.auto.commit", "false");
+        //propsConsumer.put("enable.auto.commit", "false");
         propsConsumer.put("isolation.level", "read_committed");
         propsConsumer.put("max.poll.records", maxPoll);
         propsConsumer.put("max.partition.fetch.bytes", maxPartitionFetchBytes);

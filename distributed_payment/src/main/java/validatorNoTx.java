@@ -155,7 +155,7 @@ public class validatorNoTx {
         propsConsumerTx.put("bootstrap.servers", bootstrapServers);
         propsConsumerTx.put("group.id", "validator-group");
         propsConsumerTx.put("auto.offset.reset", "earliest");
-        propsConsumerTx.put("enable.auto.commit", "true");
+        //propsConsumerTx.put("enable.auto.commit", "true");
         propsConsumerTx.put("isolation.level", "read_committed");
         propsConsumerTx.put("max.poll.records", maxPoll);
         propsConsumerTx.put("request.timeout.ms", 300000);
@@ -190,7 +190,7 @@ public class validatorNoTx {
         // the three consumers below using the same property
         Properties propsConsumerAssign = new Properties();
         propsConsumerAssign.put("bootstrap.servers", bootstrapServers);
-        propsConsumerAssign.put("enable.auto.commit", "true");
+        //propsConsumerAssign.put("enable.auto.commit", "true");
         propsConsumerAssign.put("isolation.level", "read_committed");
         propsConsumerAssign.put("max.poll.records", maxPollUTXO);
         propsConsumerAssign.put("request.timeout.ms", 300000);
