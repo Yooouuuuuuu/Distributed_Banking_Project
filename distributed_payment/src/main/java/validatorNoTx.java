@@ -81,30 +81,25 @@ public class validatorNoTx {
                             //logger.info(record.value().toString());
                             //Start atomically transactional write. One block per transactional write.
                             //producer.beginTransaction();
-                            try {
-                                lock.lock();
-                                //As outbank, withdraw money and create UTXO for inbank. Category 0 means it is a raw transaction.
-                                if (record.value().getTransactions().get(0).getCategory() == 0) {
-                                    ProcessBlocks(record.value(), record.timestamp(), orderMultiplePartition, UTXODirectAdd, orderSeparateSend);
-                                    transactionCounts += record.value().getTransactions().size();
-                                } else if (record.value().getTransactions().get(0).getCategory() == 2) {
-                                    InitBank(record.value(), record, orderMultiplePartition);
-                                }
-                                //producer.commitTransaction();
-                                lock.unlock();
-                            } catch (Exception e) {
-                                //if kafka TX aborted, set the flag to end all threads.
-                                //producer.abortTransaction();
-                                System.out.println(Thread.currentThread().getName() + " Tx aborted. Exception: " + e.getMessage());
-                                threadsStopFlag = true;
-                                lock.unlock();
+
+                            lock.lock();
+                            //As outbank, withdraw money and create UTXO for inbank. Category 0 means it is a raw transaction.
+                            if (record.value().getTransactions().get(0).getCategory() == 0) {
+                                ProcessBlocks(record.value(), record.timestamp(), orderMultiplePartition, UTXODirectAdd, orderSeparateSend);
+                                transactionCounts += record.value().getTransactions().size();
+                            } else if (record.value().getTransactions().get(0).getCategory() == 2) {
+                                InitBank(record.value(), record, orderMultiplePartition);
                             }
+                            //producer.commitTransaction();
+                            lock.unlock();
+
                         }
                     }
-
                     //if the other thread die, end while loop thus end the thread.
                     System.out.println(Thread.currentThread().getName() + " stopped.");
-                }finally {
+                } catch (IOException | ExecutionException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                } finally {
                     //if somehow went wrong, set the flag to end the other thread.
                     threadsStopFlag = true;
                     System.out.println(Thread.currentThread().getName() + " stopped.");
