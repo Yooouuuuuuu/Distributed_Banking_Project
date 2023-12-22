@@ -66,6 +66,10 @@ public class validatorNoTx {
         InitProducer(bootstrapServers, schemaRegistryUrl, transactionalId, acks);
         Logger logger = LoggerFactory.getLogger(validatorNoTx.class);
 
+
+        bankBalance.compute(balanceRecord.key(), (key, value)
+                -> balanceRecord.value().getBalance());
+
         //thread 0
         Thread pollBlocksThread = new Thread(new Runnable() {
             @Override
