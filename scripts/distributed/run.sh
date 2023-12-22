@@ -20,7 +20,7 @@ blockTimeout=1000
 
 orderMultiplePartition="true"
 UTXODirectAdd="true"
-logger="error" #"off", "trace", "debug", "info", "warn", "error"
+logger="info" #"off", "trace", "debug", "info", "warn", "error"
 
 #need to change for testing
 validatorMaxPoll=$3

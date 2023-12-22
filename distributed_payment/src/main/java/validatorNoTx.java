@@ -85,22 +85,11 @@ public class validatorNoTx {
                                 lock.lock();
                                 //As outbank, withdraw money and create UTXO for inbank. Category 0 means it is a raw transaction.
                                 if (record.value().getTransactions().get(0).getCategory() == 0) {
-                                    try {
-                                        ProcessBlocks(record.value(), record.timestamp(), orderMultiplePartition, UTXODirectAdd, orderSeparateSend);
-                                        transactionCounts += record.value().getTransactions().size();
-                                        //System.out.println("transaction counts: " + transactionCounts);
-
-                                    } catch (InterruptedException | ExecutionException | IOException e) {
-                                    }
+                                    ProcessBlocks(record.value(), record.timestamp(), orderMultiplePartition, UTXODirectAdd, orderSeparateSend);
+                                    transactionCounts += record.value().getTransactions().size();
                                 } else if (record.value().getTransactions().get(0).getCategory() == 2) {
-                                    //Category 2 means it is an initialize record for accounts' balance. Only do once when system start.
-                                    try {
-                                        InitBank(record.value(), record, orderMultiplePartition);
-                                    } catch (InterruptedException | ExecutionException e) {
-                                        throw new RuntimeException(e);
-                                    }
+                                    InitBank(record.value(), record, orderMultiplePartition);
                                 }
-                                consumerFromBlocks.commitSync();
                                 //producer.commitTransaction();
                                 lock.unlock();
                             } catch (Exception e) {
