@@ -577,7 +577,7 @@ public class validatorNoTx {
                 bankBalance.compute(balanceRecord.key(), (key, value)
                         -> balanceRecord.value().getBalance());
                 //break when poll to end, while -2 for some reason, maybe the marker
-                if (balanceRecord.offset() == latestOffset - 2) {
+                if (balanceRecord.offset() == latestOffset - 1) {
                     break outerLoop;
                 }
             }

@@ -60,6 +60,18 @@ sshpass -p nsd ssh nsd@140.119.164.32 -p 9011 << MACHINE2
     echo nsd | sudo -S tc qdisc add dev enp52s0 root netem delay '$delay'ms
 exit
 MACHINE2
+
+sshpass -p nsd ssh nsd@140.119.164.32 -p 9012 << MACHINE3
+    echo nsd | sudo -S tc qdisc add dev enp52s0 root netem delay '$delay'ms
+exit
+MACHINE3
+
+sshpass -p nsd ssh nsd@140.119.164.32 -p 9013 << MACHINE4
+    echo nsd | sudo -S tc qdisc add dev enp52s0 root netem delay '$delay'ms
+exit
+MACHINE4
+
+
 fi
 
 
@@ -67,18 +79,24 @@ fi
 echo '=== open consumers ==='
 gnome-terminal -- ./runMachine1.sh 1 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks
 gnome-terminal -- ./runMachine2.sh 2 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks
+gnome-terminal -- ./runMachine3.sh 3 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks
+gnome-terminal -- ./runMachine4.sh 4 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks
 sleep 30s
 
 #sending data
 echo '=== sending data ==='
 gnome-terminal -- ./sendMachine1.sh 1 $((tokensPerSec/2)) $zipfExponent
 gnome-terminal -- ./sendMachine2.sh 2 $((tokensPerSec/2)) $zipfExponent
+gnome-terminal -- ./sendMachine3.sh 3 $((tokensPerSec/2)) $zipfExponent
+gnome-terminal -- ./sendMachine4.sh 4 $((tokensPerSec/2)) $zipfExponent
 sleep $((waitTime))s
 
 #close consumers
 echo '=== close consumers ==='
 gnome-terminal -- ./endMachine1.sh $delay
 gnome-terminal -- ./endMachine2.sh $delay
+gnome-terminal -- ./endMachine3.sh $delay
+gnome-terminal -- ./endMachine4.sh $delay
 sleep 5s
 
 echo "=== calculate TPS ===" 
