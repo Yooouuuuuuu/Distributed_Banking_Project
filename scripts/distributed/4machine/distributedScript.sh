@@ -23,18 +23,18 @@ tokensPerSec=100000
 #tokensPerSec=300000
 
 #init
-numOfPartitions=2
+numOfPartitions=4
 numOfAccounts=1000
 numOfReplicationFactor=1
-#delay=0
-delay=100
+delay=0
+#delay=100
 
 #for tokensPerSec in `seq 5000 5000 300000`
 #for maxFetchBytes in `seq 5000 5000 200000`
 #for blockSize in `seq 100 100 3000`
 #for delay in `seq 0 5 100`
 
-for tokensPerSec in `seq 50 50 1000`
+for tokensPerSec in 300000
 do
 echo '=== tokensPerSec: '$tokensPerSec', '$validatorOrBaseline' ===' 
 #initialize Kafka topics and add delay
@@ -61,13 +61,13 @@ sshpass -p nsd ssh nsd@140.119.164.32 -p 9011 << MACHINE2
 exit
 MACHINE2
 
-sshpass -p nsd ssh nsd@140.119.164.32 -p 9012 << MACHINE3
-    echo nsd | sudo -S tc qdisc add dev enp52s0 root netem delay '$delay'ms
+sshpass -p nsd ssh nsdlab@140.119.164.32 -p 9012 << MACHINE3
+    echo nsd | sudo -S tc qdisc add dev enx5c925ed762c6 root netem delay '$delay'ms
 exit
 MACHINE3
 
-sshpass -p nsd ssh nsd@140.119.164.32 -p 9013 << MACHINE4
-    echo nsd | sudo -S tc qdisc add dev enp52s0 root netem delay '$delay'ms
+sshpass -p nsd ssh nsdlab@140.119.164.32 -p 9013 << MACHINE4
+    echo nsd | sudo -S tc qdisc add dev enx5c925ed76abd root netem delay '$delay'ms
 exit
 MACHINE4
 
@@ -87,8 +87,6 @@ sleep 30s
 echo '=== sending data ==='
 gnome-terminal -- ./sendMachine1.sh 1 $((tokensPerSec/2)) $zipfExponent
 gnome-terminal -- ./sendMachine2.sh 2 $((tokensPerSec/2)) $zipfExponent
-gnome-terminal -- ./sendMachine3.sh 3 $((tokensPerSec/2)) $zipfExponent
-gnome-terminal -- ./sendMachine4.sh 4 $((tokensPerSec/2)) $zipfExponent
 sleep $((waitTime))s
 
 #close consumers
