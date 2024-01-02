@@ -76,7 +76,7 @@ public class validator {
                     producer.initTransactions();
                     //poll from "blocks" topic
                     while (!threadsStopFlag) {
-                        ConsumerRecords<String, Block> records = consumerFromBlocks.poll(Duration.ofMillis(1000));
+                        ConsumerRecords<String, Block> records = consumerFromBlocks.poll(Duration.ofMillis(10000));
                         for (ConsumerRecord<String, Block> record : records) {
                             //logger.info(record.value().toString());
                             //Start atomically transactional write. One block per transactional write.
@@ -443,7 +443,7 @@ public class validator {
                             while (true) {
                                 consumerFromUTXOOffset.seek(topicPartition, latestOffset);
                                 ConsumerRecords<String, Block> offsetRecords =
-                                        consumerFromUTXOOffset.poll(Duration.ofMillis(1000));
+                                        consumerFromUTXOOffset.poll(Duration.ofMillis(10000));
                                 for (ConsumerRecord<String, Block> offsetRecord : offsetRecords) {
                                     lastOffsetOfUTXO.put(updatePartition,
                                             offsetRecord.value().getTransactions().get(0).getAmount());
@@ -488,7 +488,7 @@ public class validator {
 
             producer2.beginTransaction();
             try {
-                ConsumerRecords<String, Block> UTXORecords = consumerFromUTXO.poll(Duration.ofMillis(1000));
+                ConsumerRecords<String, Block> UTXORecords = consumerFromUTXO.poll(Duration.ofMillis(10000));
                 lock.lock();
                 for (ConsumerRecord<String, Block> UTXORecord : UTXORecords) {
                     consumeList.add(UTXORecord.value().getTransactions().get(0).getSerialNumber());
@@ -572,7 +572,7 @@ public class validator {
         consumerFromLocalBalance.seek(topicPartition, 0);
         outerLoop:
         while (true) {
-            ConsumerRecords<String, LocalBalance> balanceRecords = consumerFromLocalBalance.poll(Duration.ofMillis(1000));
+            ConsumerRecords<String, LocalBalance> balanceRecords = consumerFromLocalBalance.poll(Duration.ofMillis(5000));
             for (ConsumerRecord<String, LocalBalance> balanceRecord : balanceRecords) {
                 bankBalance.compute(balanceRecord.key(), (key, value)
                         -> balanceRecord.value().getBalance());

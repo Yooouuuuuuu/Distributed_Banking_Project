@@ -34,7 +34,7 @@ delay=0
 #for blockSize in `seq 100 100 3000`
 #for delay in `seq 0 5 100`
 
-for tokensPerSec in 300000
+for tokensPerSec in `seq 200000 5000 300000`
 do
 echo '=== tokensPerSec: '$tokensPerSec', '$validatorOrBaseline' ===' 
 #initialize Kafka topics and add delay
@@ -42,7 +42,7 @@ sshpass -p nsd ssh nsd@140.119.164.32 -p 9010 << MACHINE1
 echo '=== Access into machine 1 (port:9010) ==='
 
 echo 'init Kafka'
-cd /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/distributed/4machine
+cd /home/nsd/liang_you_git_repo/Distributed_Banking_Project/scripts/distributed
 ./init.sh 1 $numOfPartitions $numOfAccounts $numOfReplicationFactor
 
 if [ $delay != 0 ]

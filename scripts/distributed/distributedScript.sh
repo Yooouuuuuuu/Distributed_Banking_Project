@@ -34,9 +34,9 @@ delay=100
 #for blockSize in `seq 100 100 3000`
 #for delay in `seq 0 5 100`
 
-for tokensPerSec in `seq 50 50 1000`
+for tokensPerSec in `seq 100 100 2000`
 do
-echo '=== tokensPerSec: '$tokensPerSec', '$validatorOrBaseline' ===' 
+echo '=== delay: '$delay', '$validatorOrBaseline' ===' 
 #initialize Kafka topics and add delay
 sshpass -p nsd ssh nsd@140.119.164.32 -p 9010 << MACHINE1
 echo '=== Access into machine 1 (port:9010) ==='

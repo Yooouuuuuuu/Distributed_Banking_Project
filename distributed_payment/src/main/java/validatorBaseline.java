@@ -53,7 +53,7 @@ public class validatorBaseline {
 
         //poll from "blocks" topic
         while (true) {
-            ConsumerRecords<String, Block> records = consumerFromBlocks.poll(Duration.ofMillis(1000));
+            ConsumerRecords<String, Block> records = consumerFromBlocks.poll(Duration.ofMillis(10000));
             for (ConsumerRecord<String, Block> record : records) {
                 //Start atomically transactional write. One block per transactional write.
                 producer.beginTransaction();
@@ -344,7 +344,7 @@ public class validatorBaseline {
         consumerFromLocalBalance.seek(topicPartition, 0);
         outerLoop:
         while (true) {
-            ConsumerRecords<String, LocalBalance> balanceRecords = consumerFromLocalBalance.poll(Duration.ofMillis(1000));
+            ConsumerRecords<String, LocalBalance> balanceRecords = consumerFromLocalBalance.poll(Duration.ofMillis(5000));
             for (ConsumerRecord<String, LocalBalance> balanceRecord : balanceRecords) {
                 bankBalance.compute(balanceRecord.key(), (key, value)
                         -> balanceRecord.value().getBalance());
