@@ -18,7 +18,7 @@ acks=all
 
 #for send.sh
 zipfExponent=0
-waitTime=30
+waitTime=300
 tokensPerSec=100000
 #tokensPerSec=300000
 
@@ -88,8 +88,8 @@ sleep 30s
 
 #sending data
 echo '=== sending data ==='
-gnome-terminal -- ./sendMachine1.sh 1 $((tokensPerSec/2)) $zipfExponent
-gnome-terminal -- ./sendMachine2.sh 2 $((tokensPerSec/2)) $zipfExponent
+gnome-terminal -- ./sendMachine1.sh 1 $((tokensPerSec/2)) $zipfExponent $numOfPartitions $numOfAccounts
+gnome-terminal -- ./sendMachine2.sh 2 $((tokensPerSec/2)) $zipfExponent $numOfPartitions $numOfAccounts
 sleep $((waitTime))s
 
 #close consumers
