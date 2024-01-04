@@ -8,7 +8,7 @@
 #writeToCsv.sh machineNum tokensPerSec
 
 #for run.sh
-validatorOrBaseline=validator #validator or baseline
+validatorOrBaseline=baseline #validator or baseline
 validatorMaxPoll=2000000
 UTXOMaxPoll=10000000
 aggregatorMaxPoll=2000000
@@ -34,8 +34,7 @@ delay=100
 #for blockSize in `seq 100 100 3000`
 #for delay in `seq 0 5 100`
 
-for tokensPerSec in `seq 50 50 2000`
-#for tokensPerSec in 100000
+for tokensPerSec in `seq 500 500 20000`
 do
 echo '=== tokensPerSec: '$tokensPerSec', '$validatorOrBaseline' ===' 
 #initialize Kafka topics and add delay

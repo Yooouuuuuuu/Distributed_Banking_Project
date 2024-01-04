@@ -34,7 +34,7 @@ delay=0
 #for blockSize in `seq 100 100 3000`
 #for delay in `seq 0 5 100`
 
-for tokensPerSec in `seq 200000 5000 300000`
+for tokensPerSec in `seq 100000 5000 200000`
 do
 echo '=== tokensPerSec: '$tokensPerSec', '$validatorOrBaseline' ===' 
 #initialize Kafka topics and add delay

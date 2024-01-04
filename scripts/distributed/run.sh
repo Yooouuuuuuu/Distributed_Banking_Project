@@ -16,7 +16,7 @@ validatorOrBaseline=$2
 
 numOfPartitions=2
 numOfAccounts=1000
-blockTimeout=1000
+blockTimeout=10000
 
 orderMultiplePartition="true"
 UTXODirectAdd="true"
