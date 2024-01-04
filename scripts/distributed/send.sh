@@ -12,8 +12,8 @@ else
     schemaRegistryUrl="http://192.168.50.224:8081"
 fi
 
-numOfPartitions=2
-numOfAccounts=1000
+numOfPartitions=$4
+numOfAccounts=$5
 initBalance=100000000
 amountPerTransaction=1
 executionTime=1000000
