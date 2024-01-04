@@ -8,7 +8,7 @@
 #writeToCsv.sh machineNum tokensPerSec
 
 #for run.sh
-validatorOrBaseline=validator #validator or baseline
+validatorOrBaseline=baseline #validator or baseline
 validatorMaxPoll=2000000
 UTXOMaxPoll=10000000
 aggregatorMaxPoll=2000000
