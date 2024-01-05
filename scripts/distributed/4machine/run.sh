@@ -14,8 +14,8 @@ fi
 
 validatorOrBaseline=$2
 
-numOfPartitions=2
-numOfAccounts=1000
+numOfPartitions=$9 
+numOfAccounts=$10
 blockTimeout=1000
 
 orderMultiplePartition="true"

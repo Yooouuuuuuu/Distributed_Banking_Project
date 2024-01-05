@@ -8,7 +8,7 @@
 #writeToCsv.sh machineNum tokensPerSec
 
 #for run.sh
-validatorOrBaseline=baseline #validator or baseline
+validatorOrBaseline=validator #validator or baseline
 validatorMaxPoll=2000000
 UTXOMaxPoll=10000000
 aggregatorMaxPoll=2000000
@@ -80,10 +80,10 @@ fi
 
 #open consumers 
 echo '=== open consumers ==='
-gnome-terminal -- ./runMachine1.sh 1 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks
-gnome-terminal -- ./runMachine2.sh 2 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks
-gnome-terminal -- ./runMachine3.sh 3 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks
-gnome-terminal -- ./runMachine4.sh 4 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks
+gnome-terminal -- ./runMachine1.sh 1 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks $numOfPartitions $numOfAccounts
+gnome-terminal -- ./runMachine2.sh 2 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks $numOfPartitions $numOfAccounts
+gnome-terminal -- ./runMachine3.sh 3 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks $numOfPartitions $numOfAccounts
+gnome-terminal -- ./runMachine4.sh 4 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks $numOfPartitions $numOfAccounts
 sleep 30s
 
 #sending data
