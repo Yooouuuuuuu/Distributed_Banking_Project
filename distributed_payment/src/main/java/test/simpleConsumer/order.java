@@ -62,7 +62,8 @@ public class order {
                          */
                         if (record.value().getTransactions().get(i).getCategory() == 1) {
                             numOfTrades += 1;
-                            System.out.println("complete trade count: " + numOfTrades);
+                            System.out.println("complete trade count: " + numOfTrades + ", outbank: " + record.value().getTransactions().get(i).getOutAccount() +
+                                    ", inbank: " + record.value().getTransactions().get(i).getInAccount());
                         }
                     }
                 }

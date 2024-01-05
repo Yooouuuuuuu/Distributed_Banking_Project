@@ -76,7 +76,7 @@ public class validatorNoTx {
                     //producer.initTransactions();
                     //poll from "blocks" topic
                     while (!threadsStopFlag) {
-                        ConsumerRecords<String, Block> records = consumerFromBlocks.poll(Duration.ofMillis(10000));
+                        ConsumerRecords<String, Block> records = consumerFromBlocks.poll(Duration.ofMillis(1000));
                         for (ConsumerRecord<String, Block> record : records) {
                             //logger.info(record.value().toString());
                             //Start atomically transactional write. One block per transactional write.
@@ -443,7 +443,7 @@ public class validatorNoTx {
                             while (true) {
                                 consumerFromUTXOOffset.seek(topicPartition, latestOffset);
                                 ConsumerRecords<String, Block> offsetRecords =
-                                        consumerFromUTXOOffset.poll(Duration.ofMillis(10000));
+                                        consumerFromUTXOOffset.poll(Duration.ofMillis(1000));
                                 for (ConsumerRecord<String, Block> offsetRecord : offsetRecords) {
                                     lastOffsetOfUTXO.put(updatePartition,
                                             offsetRecord.value().getTransactions().get(0).getAmount());
@@ -488,7 +488,7 @@ public class validatorNoTx {
 
             //producer2.beginTransaction();
             try {
-                ConsumerRecords<String, Block> UTXORecords = consumerFromUTXO.poll(Duration.ofMillis(10000));
+                ConsumerRecords<String, Block> UTXORecords = consumerFromUTXO.poll(Duration.ofMillis(1000));
                 lock.lock();
                 for (ConsumerRecord<String, Block> UTXORecord : UTXORecords) {
                     consumeList.add(UTXORecord.value().getTransactions().get(0).getSerialNumber());

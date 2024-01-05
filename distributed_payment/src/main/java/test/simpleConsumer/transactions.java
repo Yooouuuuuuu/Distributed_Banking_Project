@@ -61,7 +61,10 @@ public class transactions {
                             creditCount += 1;
                             offsetCount += 1;
                         }
+                        System.out.println("outbank: " + record.value().getTransactions().get(i).getOutAccount() + ", inbank: " + record.value().getTransactions().get(i).getInAccount());
                     }
+
+
                     System.out.println("originalCount: " + originalCount +
                             " creditCount: " + creditCount +
                             " offsetCount: " + offsetCount
