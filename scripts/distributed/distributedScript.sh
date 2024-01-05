@@ -65,14 +65,14 @@ fi
 
 #open consumers 
 echo '=== open consumers ==='
-gnome-terminal -- ./runMachine1.sh 1 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks
-gnome-terminal -- ./runMachine2.sh 2 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks
+gnome-terminal -- ./runMachine1.sh 1 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks $numOfPartitions $numOfAccounts
+gnome-terminal -- ./runMachine2.sh 2 $validatorOrBaseline $validatorMaxPoll $UTXOMaxPoll $aggregatorMaxPoll $blockSize $maxFetchBytes $acks $numOfPartitions $numOfAccounts
 sleep 30s
 
 #sending data
 echo '=== sending data ==='
-gnome-terminal -- ./sendMachine1.sh 1 $((tokensPerSec/2)) $zipfExponent
-gnome-terminal -- ./sendMachine2.sh 2 $((tokensPerSec/2)) $zipfExponent
+gnome-terminal -- ./sendMachine1.sh 1 $((tokensPerSec/2)) $zipfExponent $numOfPartitions $numOfAccounts
+gnome-terminal -- ./sendMachine2.sh 2 $((tokensPerSec/2)) $zipfExponent $numOfPartitions $numOfAccounts
 sleep $((waitTime))s
 
 #close consumers
